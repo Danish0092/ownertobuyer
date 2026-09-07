@@ -14,9 +14,17 @@ export default async function Home() {
   return (
     <div className="flex flex-col flex-1 items-center bg-zinc-50 font-sans dark:bg-black">
       <main className="flex flex-1 w-full max-w-3xl flex-col gap-6 py-16 px-16 bg-white dark:bg-black">
-        <h1 className="text-2xl font-semibold text-black dark:text-zinc-50">
-          OwnerToBuyer — Supabase connection check
-        </h1>
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-semibold text-black dark:text-zinc-50">
+            OwnerToBuyer
+          </h1>
+          <a
+            href="/properties/new"
+            className="rounded bg-foreground px-4 py-2 text-sm font-medium text-background"
+          >
+            Post a property
+          </a>
+        </div>
 
         {error ? (
           <p className="text-red-600">
