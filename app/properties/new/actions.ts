@@ -3,40 +3,9 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { uniqueSlug } from "@/lib/slug";
-import {
-  PROPERTY_CATEGORIES,
-  PROPERTY_TYPES,
-  PROPERTY_TYPES_BY_CATEGORY,
-  PROPERTY_PURPOSES,
-  SIZE_UNITS,
-  PRICE_TYPES,
-  POSSESSION_STATUSES,
-  FURNISHED_STATUSES,
-  CONSTRUCTION_STATUSES,
-  AUTHORITY_STATUSES,
-  SELLER_TYPES,
-  type PropertyCategory,
-} from "@/lib/property-options";
+import { parsePropertyForm } from "@/lib/parse-property-form";
 
 export type ActionResult = { error: string } | null;
-
-function str(formData: FormData, key: string): string | null {
-  const v = formData.get(key);
-  if (typeof v !== "string" || v.trim() === "") return null;
-  return v.trim();
-}
-
-function num(formData: FormData, key: string): number | null {
-  const v = str(formData, key);
-  if (v === null) return null;
-  const n = Number(v);
-  return Number.isFinite(n) ? n : null;
-}
-
-function oneOf<T extends string>(value: string | null, allowed: readonly T[]): T | null {
-  if (value && (allowed as readonly string[]).includes(value)) return value as T;
-  return null;
-}
 
 export async function createProperty(
   _prevState: ActionResult,
@@ -52,47 +21,11 @@ export async function createProperty(
     redirect("/login");
   }
 
-  // --- Required fields ---
-  const title = str(formData, "title");
-  const purpose = oneOf(str(formData, "purpose"), PROPERTY_PURPOSES);
-  const category = oneOf(str(formData, "category"), PROPERTY_CATEGORIES);
-  const propertyType = oneOf(str(formData, "property_type"), PROPERTY_TYPES);
-  const cityId = str(formData, "city_id");
-  const price = num(formData, "price");
-  const sellerType = oneOf(str(formData, "seller_type"), SELLER_TYPES);
+  const parsed = parsePropertyForm(formData);
+  if ("error" in parsed) return parsed;
+  const { amenity_ids: amenityIds, ...fields } = parsed.fields;
 
-  if (!title || !purpose || !category || !propertyType || !cityId || price === null || !sellerType) {
-    return { error: "Please fill in all required fields." };
-  }
-
-  // Defense in depth: the client form already constrains which
-  // property_type options are shown per category, but a direct POST
-  // could bypass that, so re-check server-side too.
-  if (!PROPERTY_TYPES_BY_CATEGORY[category as PropertyCategory].includes(propertyType)) {
-    return { error: "That property type doesn't belong to the selected category." };
-  }
-
-  // --- Optional fields ---
-  const areaId = str(formData, "area_id");
-  const societyId = str(formData, "society_id");
-  const address = str(formData, "address");
-  const description = str(formData, "description");
-  const size = num(formData, "size");
-  const sizeUnit = oneOf(str(formData, "size_unit"), SIZE_UNITS);
-  const priceType = oneOf(str(formData, "price_type"), PRICE_TYPES) ?? "TOTAL";
-  const bedrooms = num(formData, "bedrooms");
-  const bathrooms = num(formData, "bathrooms");
-  const parkingSpaces = num(formData, "parking_spaces");
-  const floorNumber = num(formData, "floor_number");
-  const totalFloors = num(formData, "total_floors");
-  const possessionStatus = oneOf(str(formData, "possession_status"), POSSESSION_STATUSES) ?? "NOT_SPECIFIED";
-  const installmentAvailable = formData.get("installment_available") === "on";
-  const furnishedStatus = oneOf(str(formData, "furnished_status"), FURNISHED_STATUSES) ?? "NOT_SPECIFIED";
-  const constructionStatus = oneOf(str(formData, "construction_status"), CONSTRUCTION_STATUSES) ?? "NOT_SPECIFIED";
-  const authorityStatus = oneOf(str(formData, "authority_status"), AUTHORITY_STATUSES) ?? "NOT_PROVIDED";
-  const amenityIds = formData.getAll("amenities").filter((v): v is string => typeof v === "string");
-
-  const slug = uniqueSlug(title);
+  const slug = uniqueSlug(fields.title);
 
   // NOTE: no moderation dashboard exists yet (feature #20 in the spec),
   // so listings publish immediately rather than sitting in
@@ -101,32 +34,9 @@ export async function createProperty(
   const { data: property, error } = await supabase
     .from("properties")
     .insert({
+      ...fields,
       seller_id: user.id,
-      title,
       slug,
-      purpose,
-      category,
-      property_type: propertyType,
-      city_id: cityId,
-      area_id: areaId,
-      society_id: societyId,
-      address,
-      price,
-      price_type: priceType,
-      size,
-      size_unit: sizeUnit,
-      bedrooms,
-      bathrooms,
-      parking_spaces: parkingSpaces,
-      floor_number: floorNumber,
-      total_floors: totalFloors,
-      possession_status: possessionStatus,
-      installment_available: installmentAvailable,
-      furnished_status: furnishedStatus,
-      construction_status: constructionStatus,
-      authority_status: authorityStatus,
-      description,
-      seller_type: sellerType,
       status: "PUBLISHED",
       published_at: new Date().toISOString(),
     })
@@ -146,6 +56,47 @@ export async function createProperty(
     // Non-fatal: the property was created successfully either way.
     if (amenityError) {
       console.error("Failed to attach amenities:", amenityError.message);
+    }
+  }
+
+  // Photos/video (only sent by the PostPropertyWizard flow — the
+  // plain single-page form has no upload step yet). Uploaded here,
+  // after the row exists, because the property-media Storage policies
+  // key off properties.seller_id via the {property_id}/... path, so a
+  // photo can't be attributed to a property that doesn't exist yet.
+  const photos = formData.getAll("photos").filter((f): f is File => f instanceof File && f.size > 0);
+  const video = formData.get("video");
+
+  for (let i = 0; i < photos.length; i++) {
+    const file = photos[i];
+    const path = `${property.id}/${i}-${file.name}`;
+    const { error: uploadError } = await supabase.storage.from("property-media").upload(path, file);
+    if (uploadError) {
+      console.error("Photo upload failed:", uploadError.message);
+      continue;
+    }
+    await supabase.from("property_media").insert({
+      property_id: property.id,
+      media_type: "IMAGE",
+      storage_path: path,
+      sort_order: i,
+      is_primary: i === 0,
+    });
+  }
+
+  if (video instanceof File && video.size > 0) {
+    const path = `${property.id}/video-${video.name}`;
+    const { error: uploadError } = await supabase.storage.from("property-media").upload(path, video);
+    if (!uploadError) {
+      await supabase.from("property_media").insert({
+        property_id: property.id,
+        media_type: "VIDEO",
+        storage_path: path,
+        sort_order: photos.length,
+        is_primary: false,
+      });
+    } else {
+      console.error("Video upload failed:", uploadError.message);
     }
   }
 

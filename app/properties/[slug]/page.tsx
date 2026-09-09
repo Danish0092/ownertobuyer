@@ -1,6 +1,12 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { labelize } from "@/lib/property-options";
+import { priceLabel } from "@/lib/format";
+import { BackButton } from "@/components/BackButton";
+import { SaveButton } from "@/components/SaveButton";
+import { ContactButtons } from "@/components/ContactButtons";
+import { ReportButton } from "@/components/ReportButton";
+import { SiteHeader } from "@/components/SiteHeader";
 
 export default async function PropertyDetailPage({
   params,
@@ -10,15 +16,21 @@ export default async function PropertyDetailPage({
   const { slug } = await params;
   const supabase = await createClient();
 
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   const { data: property } = await supabase
     .from("properties")
     .select(
-      `id, title, description, purpose, category, property_type, price, price_type,
+      `id, seller_id, title, description, purpose, category, property_type, price, price_type,
        size, size_unit, bedrooms, bathrooms, parking_spaces, floor_number, total_floors,
        possession_status, installment_available, furnished_status, construction_status,
        authority_status, seller_type, status, address, created_at,
        cities(name), areas(name), societies(name),
-       property_amenities(amenities(name))`
+       property_amenities(amenities(name)),
+       property_media(storage_path, media_type, is_primary, sort_order),
+       profiles(full_name, account_type, phone_number, created_at)`
     )
     .eq("slug", slug)
     .maybeSingle();
@@ -27,87 +39,250 @@ export default async function PropertyDetailPage({
     notFound();
   }
 
-  const amenities = property.property_amenities
+  // property-media is a private bucket (RLS keyed off the property's
+  // status) — a signed URL is needed rather than a raw public one.
+  const sortedMedia = [...property.property_media].sort((a, b) => a.sort_order - b.sort_order);
+  const mediaUrls = await Promise.all(
+    sortedMedia.slice(0, 3).map(async (m) => {
+      const { data } = await supabase.storage.from("property-media").createSignedUrl(m.storage_path, 3600);
+      return { url: data?.signedUrl ?? null, type: m.media_type };
+    })
+  );
+
+  const [{ count: sellerListingsCount }, favoriteRow] = await Promise.all([
+    supabase
+      .from("properties")
+      .select("id", { count: "exact", head: true })
+      .eq("seller_id", property.seller_id)
+      .eq("status", "PUBLISHED"),
+    user
+      ? supabase
+          .from("favorites")
+          .select("id")
+          .eq("user_id", user.id)
+          .eq("property_id", property.id)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+  ]);
+
+  const features = property.property_amenities
     .map((pa) => pa.amenities?.name)
     .filter((n): n is string => Boolean(n));
 
+  const areaLine = [property.societies?.name, property.areas?.name, property.cities?.name]
+    .filter(Boolean)
+    .join(", ");
+
+  const detailRows: { label: string; value: string }[] = [
+    { label: "Purpose", value: labelize(property.purpose) },
+    { label: "Category", value: labelize(property.category) },
+    { label: "Property Type", value: labelize(property.property_type) },
+    ...(property.floor_number != null ? [{ label: "Floor", value: String(property.floor_number) }] : []),
+    ...(property.total_floors != null ? [{ label: "Total Floors", value: String(property.total_floors) }] : []),
+    ...(property.parking_spaces != null ? [{ label: "Parking", value: String(property.parking_spaces) }] : []),
+    { label: "Possession", value: labelize(property.possession_status) },
+    { label: "Construction", value: labelize(property.construction_status) },
+    { label: "Price Type", value: labelize(property.price_type) },
+    ...(property.installment_available ? [{ label: "Installments", value: "Available" }] : []),
+  ];
+
+  const seller = property.profiles;
+  const sellerBadgeText = property.seller_type === "OWNER" ? "OWNER DIRECT SELLER" : "PROPERTY DEALER";
+  const sellerJoined = seller?.created_at
+    ? new Date(seller.created_at).toLocaleDateString("en-US", { month: "short", year: "numeric" })
+    : "—";
+
   return (
-    <div className="flex flex-1 justify-center bg-zinc-50 dark:bg-black">
-      <main className="w-full max-w-2xl py-12 px-6">
-        <p className="mb-2 text-xs uppercase tracking-wide text-zinc-500">
-          {labelize(property.purpose)} · {labelize(property.property_type)}
-        </p>
-        <h1 className="mb-2 text-2xl font-semibold text-black dark:text-zinc-50">
-          {property.title}
-        </h1>
-        <p className="mb-6 text-sm text-zinc-500">
-          {[property.societies?.name, property.areas?.name, property.cities?.name]
-            .filter(Boolean)
-            .join(", ")}
-          {property.address ? ` — ${property.address}` : ""}
-        </p>
+    <div className="flex flex-1 flex-col bg-[#F7F9FC] pb-24 font-body">
+      <SiteHeader />
+      <div className="mx-auto w-full max-w-[1140px] px-6 pt-5">
+        <BackButton />
+      </div>
 
-        <p className="mb-6 text-xl font-semibold text-black dark:text-zinc-50">
-          PKR {Number(property.price).toLocaleString()}
-          {property.price_type === "PER_MONTH" ? " / month" : ""}
-        </p>
-
-        {property.description && (
-          <p className="mb-6 whitespace-pre-wrap text-sm text-black dark:text-zinc-50">
-            {property.description}
-          </p>
-        )}
-
-        <dl className="mb-6 grid grid-cols-2 gap-3 text-sm">
-          {property.size && (
-            <Field label="Size" value={`${property.size} ${labelize(property.size_unit ?? "")}`} />
-          )}
-          {property.bedrooms !== null && <Field label="Bedrooms" value={String(property.bedrooms)} />}
-          {property.bathrooms !== null && <Field label="Bathrooms" value={String(property.bathrooms)} />}
-          {property.parking_spaces !== null && (
-            <Field label="Parking" value={String(property.parking_spaces)} />
-          )}
-          <Field label="Possession" value={labelize(property.possession_status)} />
-          <Field label="Furnished" value={labelize(property.furnished_status)} />
-          <Field label="Construction" value={labelize(property.construction_status)} />
-          <Field label="Seller type" value={labelize(property.seller_type)} />
-          {property.installment_available && <Field label="Installments" value="Available" />}
-        </dl>
-
-        {amenities.length > 0 && (
-          <div className="mb-6">
-            <h2 className="mb-2 text-sm font-medium text-black dark:text-zinc-50">Amenities</h2>
-            <div className="flex flex-wrap gap-2">
-              {amenities.map((name) => (
-                <span
-                  key={name}
-                  className="rounded-full border border-black/[.1] px-3 py-1 text-xs text-black dark:border-white/[.15] dark:text-zinc-50"
-                >
-                  {name}
-                </span>
-              ))}
-            </div>
+      {/* Photo gallery — real uploads via signed URLs (property-media
+          is a private bucket), falling back to placeholders when a
+          listing has none yet. */}
+      <div className="mx-auto flex w-full max-w-[1140px] flex-wrap gap-2.5 px-6 pt-4">
+        {mediaUrls[0]?.url ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={mediaUrls[0].url}
+            alt=""
+            className="h-[340px] min-w-[280px] flex-[2] rounded-[18px] object-cover"
+          />
+        ) : (
+          <div className="flex h-[340px] min-w-[280px] flex-[2] items-center justify-center rounded-[18px] bg-[#DDE8F5] text-sm text-[#7C93B5]">
+            No photos yet
           </div>
         )}
-
-        <div className="rounded border border-amber-300 bg-amber-50 px-4 py-3 text-xs text-amber-900 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-200">
-          <strong>Authority/NOC status: {labelize(property.authority_status)}.</strong>{" "}
-          This is a claim made by the seller, not verified by OwnerToBuyer.
-          OwnerToBuyer does not guarantee ownership, documents, approvals, or
-          any other legal detail about this property. Buyers must complete
-          their own due diligence with the relevant authorities before making
-          any payment.
+        <div className="flex min-w-[200px] flex-1 flex-col gap-2.5">
+          {[1, 2].map((i) =>
+            mediaUrls[i]?.url ? (
+              mediaUrls[i].type === "VIDEO" ? (
+                // eslint-disable-next-line jsx-a11y/media-has-caption
+                <video key={i} src={mediaUrls[i].url!} controls className="h-[165px] rounded-[18px] object-cover" />
+              ) : (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img key={i} src={mediaUrls[i].url!} alt="" className="h-[165px] rounded-[18px] object-cover" />
+              )
+            ) : (
+              <div
+                key={i}
+                className="flex h-[165px] items-center justify-center rounded-[18px] bg-[#DDE8F5] text-xs text-[#7C93B5]"
+              >
+                {i === 1 ? "Photo 2" : "Photo / Video"}
+              </div>
+            )
+          )}
         </div>
-      </main>
+      </div>
+
+      <div className="mx-auto flex w-full max-w-[1140px] flex-wrap gap-8 px-6 pt-6.5">
+        {/* Main column */}
+        <div className="min-w-[320px] flex-[2]">
+          <div className="mb-2 flex items-center gap-2.5">
+            <span
+              className="rounded-full px-3.5 py-1.5 font-display text-[11px] font-extrabold"
+              style={
+                property.seller_type === "OWNER"
+                  ? { background: "linear-gradient(135deg,#22C55E,#14B8A6)", color: "#fff" }
+                  : { background: "#EEF2F7", color: "#475467" }
+              }
+            >
+              {property.seller_type === "OWNER" ? "OWNER DIRECT" : "DEALER"}
+            </span>
+            <SaveButton propertyId={property.id} initialSaved={!!favoriteRow?.data} isLoggedIn={!!user} />
+          </div>
+
+          <h1 className="mb-1.5 font-display text-[26px] font-extrabold text-[#101828]">{property.title}</h1>
+          <div className="mb-3.5 text-sm text-[#667085]">
+            {areaLine}
+            {property.address ? ` — ${property.address}` : ""}
+          </div>
+          <div className="mb-4 font-display text-[30px] font-extrabold text-[#0B2545]">
+            PKR {priceLabel(property.price, property.price_type).replace("PKR ", "")}
+          </div>
+
+          <div className="mb-6 flex flex-wrap gap-2">
+            {property.size && (
+              <Pill bg="#EFF6FF" fg="#1D4ED8">
+                {property.size} {labelize(property.size_unit ?? "")}
+              </Pill>
+            )}
+            {property.bedrooms != null && (
+              <Pill bg="#EFF6FF" fg="#1D4ED8">
+                {property.bedrooms} Beds
+              </Pill>
+            )}
+            {property.bathrooms != null && (
+              <Pill bg="#EFF6FF" fg="#1D4ED8">
+                {property.bathrooms} Baths
+              </Pill>
+            )}
+            <Pill bg="#F0FDF4" fg="#15803D">
+              {labelize(property.furnished_status)}
+            </Pill>
+          </div>
+
+          {property.description && (
+            <>
+              <h3 className="mb-2.5 font-display text-base font-bold text-[#101828]">Property Overview</h3>
+              <p className="mb-6 whitespace-pre-wrap text-sm leading-relaxed text-[#475467]">
+                {property.description}
+              </p>
+            </>
+          )}
+
+          <h3 className="mb-2.5 font-display text-base font-bold text-[#101828]">Property Details</h3>
+          <div className="mb-6 grid grid-cols-2 gap-2.5">
+            {detailRows.map((row) => (
+              <div
+                key={row.label}
+                className="flex justify-between rounded-[10px] border border-[#EAEFF6] bg-white px-3.5 py-2.5 text-[13px]"
+              >
+                <span className="text-[#667085]">{row.label}</span>
+                <span className="font-semibold text-[#101828]">{row.value}</span>
+              </div>
+            ))}
+          </div>
+
+          {features.length > 0 && (
+            <>
+              <h3 className="mb-2.5 font-display text-base font-bold text-[#101828]">Features &amp; Amenities</h3>
+              <div className="mb-6 flex flex-wrap gap-2">
+                {features.map((f) => (
+                  <span key={f} className="rounded-full bg-[#F1F5F9] px-3.5 py-1.5 text-[12.5px] font-semibold text-[#334155]">
+                    {f}
+                  </span>
+                ))}
+              </div>
+            </>
+          )}
+
+          <h3 className="mb-1 font-display text-base font-bold text-[#101828]">Approval / Authority Information</h3>
+          <p className="mb-2.5 text-[11.5px] text-[#98A2B3]">
+            Seller-provided information — not independently verified by the platform.
+          </p>
+          <div className="mb-6 flex flex-wrap gap-2">
+            <span className="rounded-full bg-[#FFF7E6] px-3.5 py-1.5 text-[12.5px] font-semibold text-[#B45309]">
+              {labelize(property.authority_status)}
+            </span>
+          </div>
+
+          <h3 className="mb-2.5 font-display text-base font-bold text-[#101828]">Location</h3>
+          <div className="mb-4 flex h-[180px] items-center justify-center rounded-2xl bg-gradient-to-br from-[#DDE8F5] to-[#EFF6FF] text-[13px] text-[#667085]">
+            Map placeholder — {areaLine}
+          </div>
+
+          <ReportButton propertyId={property.id} />
+        </div>
+
+        {/* Sidebar */}
+        <div className="min-w-[280px] flex-1">
+          <div className="mb-4.5 rounded-[18px] border border-[#EAEFF6] bg-white p-5.5 shadow-[0_8px_24px_rgba(16,24,40,0.06)]">
+            <div className="mb-3 font-display text-xs font-extrabold text-[#0F766E]">{sellerBadgeText}</div>
+            <div className="mb-4.5 flex items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#E0ECFF] font-display text-lg font-extrabold text-[#1D4ED8]">
+                {(seller?.full_name ?? "?").charAt(0)}
+              </div>
+              <div>
+                <div className="font-display font-bold text-[#101828]">{seller?.full_name ?? "Seller"}</div>
+                <div className="text-xs text-[#667085]">
+                  {seller?.account_type === "DEALER" ? "Dealer" : "Owner"} • Joined {sellerJoined}
+                </div>
+              </div>
+            </div>
+            <div className="mb-4 text-[12.5px] text-[#475467]">
+              {sellerListingsCount ?? 0} active listing{(sellerListingsCount ?? 0) === 1 ? "" : "s"} on OwnerToBuyer
+            </div>
+            <ContactButtons propertyId={property.id} propertyTitle={property.title} phoneNumber={seller?.phone_number ?? null} />
+            <p className="mt-3.5 text-center text-[11px] text-[#98A2B3]">
+              Verify all property information independently before making any payment or transaction.
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-[#FDE9B8] bg-[#FFF9EB] p-4.5">
+            <div className="mb-1.5 font-display text-[13px] font-extrabold text-[#B45309]">Important</div>
+            <p className="m-0 text-[12.5px] leading-relaxed text-[#8A5A0A]">
+              We are only a connection platform between buyers and sellers. We do not verify
+              ownership, documents, approvals, NOCs, dues, property authenticity, or the accuracy
+              of information provided by sellers. Buyers and sellers are responsible for their own
+              due diligence before making any payment or transaction.
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
 
-function Field({ label, value }: { label: string; value: string }) {
+function Pill({ bg, fg, children }: { bg: string; fg: string; children: React.ReactNode }) {
   return (
-    <div>
-      <dt className="text-zinc-500">{label}</dt>
-      <dd className="text-black dark:text-zinc-50">{value}</dd>
-    </div>
+    <span
+      className="rounded-full px-3.5 py-1.5 text-[12.5px] font-bold"
+      style={{ background: bg, color: fg }}
+    >
+      {children}
+    </span>
   );
 }

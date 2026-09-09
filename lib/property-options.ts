@@ -39,7 +39,7 @@ export const PROPERTY_TYPES_BY_CATEGORY: Record<PropertyCategory, PropertyType[]
 export const PROPERTY_PURPOSES = ["SALE", "RENT"] as const;
 export type PropertyPurpose = (typeof PROPERTY_PURPOSES)[number];
 
-export const SIZE_UNITS = ["MARLA", "KANAL", "SQ_FT", "SQ_YD", "SQ_M"] as const;
+export const SIZE_UNITS = ["MARLA", "KANAL", "SQ_FT", "SQ_YD", "SQ_M", "ACRES"] as const;
 export type SizeUnit = (typeof SIZE_UNITS)[number];
 
 export const PRICE_TYPES = ["TOTAL", "PER_MONTH"] as const;
