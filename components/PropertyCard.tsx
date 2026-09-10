@@ -20,6 +20,9 @@ export type PropertyCardData = {
   hasVideo?: boolean;
   photoUrl?: string | null;
   href: string;
+  // When provided, the heart button performs a real save/unsave instead
+  // of being purely decorative (Home/Search leave this unset).
+  onToggleSave?: () => void;
   whatsappHref?: string;
   callHref?: string;
 };
@@ -62,8 +65,12 @@ export function PropertyCard({ data }: { data: PropertyCardData }) {
         </span>
         <button
           type="button"
-          aria-label="Save property"
-          onClick={(e) => e.preventDefault()}
+          aria-label={data.saved ? "Remove from saved" : "Save property"}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            data.onToggleSave?.();
+          }}
           className="absolute right-2.5 top-2.5 flex h-[34px] w-[34px] items-center justify-center rounded-full bg-white shadow-[0_2px_8px_rgba(16,24,40,0.18)]"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill={data.saved ? "#EF4444" : "none"} stroke="#EF4444" strokeWidth={1.8}>

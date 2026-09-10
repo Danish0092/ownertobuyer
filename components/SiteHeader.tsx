@@ -32,7 +32,9 @@ export async function SiteHeader() {
           Owner Direct
         </a>
         <span className="font-body text-sm text-[#98A2B3]">Property Videos</span>
-        <span className="font-body text-sm text-[#98A2B3]">Saved</span>
+        <a href="/saved" className="font-body text-sm text-[#667085] transition-colors hover:text-[#0B2545]">
+          Saved
+        </a>
         {user && (
           <a href="/dashboard" className="font-body text-sm text-[#667085] transition-colors hover:text-[#0B2545]">
             My Properties
