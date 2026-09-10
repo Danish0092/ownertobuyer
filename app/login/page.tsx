@@ -50,13 +50,22 @@ export default function LoginPage() {
     setPwLoading(true);
     setPwError(null);
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-
-    setPwLoading(false);
-    if (error) {
-      setPwError(error.message);
+    const { error, data } = await supabase.auth.signInWithPassword({ email, password });
+    if (error || !data.user) {
+      setPwLoading(false);
+      setPwError(error?.message ?? "Sign in failed.");
       return;
     }
+
+    const { data: profile } = await supabase.from("profiles").select("is_blocked").eq("id", data.user.id).maybeSingle();
+    if (profile?.is_blocked) {
+      await supabase.auth.signOut();
+      setPwLoading(false);
+      setPwError("This account has been blocked. Contact support if you think this is a mistake.");
+      return;
+    }
+
+    setPwLoading(false);
     router.push("/properties/new");
     router.refresh();
   }

@@ -15,8 +15,13 @@ export async function GET(request: Request) {
 
   if (token_hash && type) {
     const supabase = await createClient();
-    const { error } = await supabase.auth.verifyOtp({ type, token_hash });
-    if (!error) {
+    const { error, data } = await supabase.auth.verifyOtp({ type, token_hash });
+    if (!error && data.user) {
+      const { data: profile } = await supabase.from("profiles").select("is_blocked").eq("id", data.user.id).maybeSingle();
+      if (profile?.is_blocked) {
+        await supabase.auth.signOut();
+        redirect("/account-blocked");
+      }
       redirect(next);
     }
   }

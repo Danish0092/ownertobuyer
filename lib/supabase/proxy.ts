@@ -30,7 +30,26 @@ export async function updateSession(request: NextRequest) {
 
   // Do not remove: this call refreshes the auth token and must run before
   // any other logic that reads the session.
-  await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  // Enforce "Block user" on every request, not just at login: a user
+  // blocked mid-session still holds a valid, unexpired token, so
+  // without this check they'd keep full access until it expired.
+  // Skip the extra DB round trip entirely for anonymous visitors.
+  if (user && request.nextUrl.pathname !== '/account-blocked') {
+    const { data: profile } = await supabase.from('profiles').select('is_blocked').eq('id', user.id).maybeSingle()
+    if (profile?.is_blocked) {
+      await supabase.auth.signOut()
+      const url = request.nextUrl.clone()
+      url.pathname = '/account-blocked'
+      url.search = ''
+      const redirectResponse = NextResponse.redirect(url)
+      supabaseResponse.cookies.getAll().forEach((cookie) => redirectResponse.cookies.set(cookie))
+      return redirectResponse
+    }
+  }
 
   return supabaseResponse
 }

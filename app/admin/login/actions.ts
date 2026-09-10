@@ -29,10 +29,13 @@ export async function adminLogin(_prev: AdminLoginResult, formData: FormData): P
   // The role never comes from the client — it's re-derived server-side
   // from the session that Supabase Auth just verified, via the
   // SECURITY DEFINER is_admin() function backed by user_roles.
-  const { data: isAdmin } = await supabase.rpc("is_admin");
-  if (!isAdmin) {
-    // Valid credentials, but not an admin: don't leave them signed in
-    // under an admin-attempted session.
+  const [{ data: isAdmin }, { data: profile }] = await Promise.all([
+    supabase.rpc("is_admin"),
+    supabase.from("profiles").select("is_blocked").eq("id", data.user.id).maybeSingle(),
+  ]);
+  if (!isAdmin || profile?.is_blocked) {
+    // Valid credentials, but not an admin (or a blocked account): don't
+    // leave them signed in under an admin-attempted session.
     await supabase.auth.signOut();
     return { error: DENIED };
   }
