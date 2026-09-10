@@ -18,6 +18,7 @@ export type PropertyCardData = {
   sellerTypeLabel: string;
   saved?: boolean;
   hasVideo?: boolean;
+  photoUrl?: string | null;
   href: string;
   whatsappHref?: string;
   callHref?: string;
@@ -37,7 +38,18 @@ export function PropertyCard({ data }: { data: PropertyCardData }) {
       }}
       className="flex cursor-pointer flex-col overflow-hidden rounded-[18px] border border-[#EAEFF6] bg-white font-body shadow-[0_4px_16px_rgba(16,24,40,0.10)]"
     >
-      <div className="relative h-[190px] flex-none bg-[#DDE8F5]">
+      <div className="relative h-[190px] flex-none overflow-hidden bg-[#DDE8F5]">
+        {data.photoUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element -- signed
+          // Supabase Storage URLs expire, so next/image's remote-pattern
+          // allowlist + long-lived caching don't fit here; a plain <img>
+          // matches what PropertyDetail's gallery already does.
+          <img src={data.photoUrl} alt={data.title} className="h-full w-full object-cover" />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center text-xs font-medium text-[#8FA6C6]">
+            No photo yet
+          </div>
+        )}
         <span
           className="absolute left-3 top-3 rounded-full px-3 py-1.5 font-display text-[11px] font-bold tracking-wide"
           style={

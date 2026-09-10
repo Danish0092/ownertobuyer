@@ -5,6 +5,7 @@ import { HeroSearch } from "@/components/HeroSearch";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { priceLabel, specsLine, areaLine } from "@/lib/format";
+import { resolveCardMedia } from "@/lib/property-media";
 
 // Landing page rebuilt from the OwnerToBuyer Claude Design artifact
 // (colors, fonts, copy, and section layout reproduced from its
@@ -50,7 +51,7 @@ export default async function Home() {
     supabase
       .from("properties")
       .select(
-        "id, title, slug, price, price_type, size, size_unit, bedrooms, bathrooms, seller_type, purpose, cities(name), areas(name), societies(name)"
+        "id, title, slug, price, price_type, size, size_unit, bedrooms, bathrooms, seller_type, purpose, cities(name), areas(name), societies(name), property_media(storage_path, media_type, is_primary, sort_order)"
       )
       .eq("status", "PUBLISHED")
       .order("created_at", { ascending: false })
@@ -67,6 +68,8 @@ export default async function Home() {
     FARM_HOUSE: farmCount ?? 0,
   };
 
+  const cardMedia = await resolveCardMedia(supabase, featured ?? []);
+
   const featuredCards: PropertyCardData[] = (featured ?? []).map((p) => ({
     title: p.title,
     badgeText: p.seller_type === "OWNER" ? "OWNER DIRECT" : "DEALER",
@@ -75,7 +78,8 @@ export default async function Home() {
     specsLine: specsLine(p.size, p.size_unit, p.bedrooms, p.bathrooms),
     sellerName: "Seller",
     sellerTypeLabel: p.seller_type === "OWNER" ? "Owner" : "Dealer",
-    hasVideo: false,
+    photoUrl: cardMedia.get(p.id)?.photoUrl,
+    hasVideo: cardMedia.get(p.id)?.hasVideo ?? false,
     href: `/properties/${p.slug}`,
   }));
 
