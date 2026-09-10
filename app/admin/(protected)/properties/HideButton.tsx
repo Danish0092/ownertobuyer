@@ -2,7 +2,7 @@
 
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { togglePropertyHide } from "../actions";
+import { togglePropertyHide } from "../../actions";
 
 export function HideButton({ propertyId, status }: { propertyId: string; status: string }) {
   const router = useRouter();

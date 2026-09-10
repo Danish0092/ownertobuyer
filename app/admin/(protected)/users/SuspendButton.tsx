@@ -2,7 +2,7 @@
 
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { toggleUserBlock } from "../actions";
+import { toggleUserBlock } from "../../actions";
 
 export function SuspendButton({ userId, isBlocked }: { userId: string; isBlocked: boolean }) {
   const router = useRouter();

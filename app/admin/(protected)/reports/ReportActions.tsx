@@ -2,7 +2,7 @@
 
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { dismissReport, hideListingFromReport } from "../actions";
+import { dismissReport, hideListingFromReport } from "../../actions";
 
 export function ReportActions({ reportId, propertyId }: { reportId: string; propertyId: string }) {
   const router = useRouter();
