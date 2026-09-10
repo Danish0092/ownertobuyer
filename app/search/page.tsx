@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { PropertyCard, type PropertyCardData } from "@/components/PropertyCard";
 import { SiteHeader } from "@/components/SiteHeader";
+import { SiteFooter } from "@/components/SiteFooter";
 import { priceLabel, specsLine, areaLine } from "@/lib/format";
 import { PROPERTY_TYPES, type PropertyType } from "@/lib/property-options";
 import { SearchControls, type SearchState } from "./SearchControls";
@@ -115,6 +116,7 @@ export default async function SearchPage({
           </a>
         </div>
       )}
+      <SiteFooter />
     </div>
   );
 }

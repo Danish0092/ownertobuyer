@@ -7,6 +7,7 @@ import { SaveButton } from "@/components/SaveButton";
 import { ContactButtons } from "@/components/ContactButtons";
 import { ReportButton } from "@/components/ReportButton";
 import { SiteHeader } from "@/components/SiteHeader";
+import { SiteFooter } from "@/components/SiteFooter";
 
 export default async function PropertyDetailPage({
   params,
@@ -272,6 +273,7 @@ export default async function PropertyDetailPage({
           </div>
         </div>
       </div>
+      <SiteFooter />
     </div>
   );
 }
