@@ -11,14 +11,9 @@ export async function SiteHeader() {
   } = await supabase.auth.getUser();
 
   let initial = "OT";
-  let isAdmin = false;
   if (user) {
-    const [{ data: profile }, { data: adminCheck }] = await Promise.all([
-      supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle(),
-      supabase.rpc("is_admin"),
-    ]);
+    const { data: profile } = await supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle();
     initial = (profile?.full_name || "?").charAt(0).toUpperCase();
-    isAdmin = !!adminCheck;
   }
 
   return (
@@ -41,11 +36,6 @@ export async function SiteHeader() {
         {user && (
           <a href="/dashboard" className="font-body text-sm text-[#667085] transition-colors hover:text-[#0B2545]">
             My Properties
-          </a>
-        )}
-        {isAdmin && (
-          <a href="/admin" className="font-body text-sm font-semibold text-[#DC2626] transition-colors hover:text-[#B91C1C]">
-            Admin
           </a>
         )}
       </nav>
