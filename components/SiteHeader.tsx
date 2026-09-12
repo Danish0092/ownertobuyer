@@ -31,6 +31,9 @@ export async function SiteHeader() {
         <a href="/search?seller=OWNER" className="font-body text-sm text-[#667085] transition-colors hover:text-[#0B2545]">
           Owner Direct
         </a>
+        <a href="/requirements/new" className="font-body text-sm text-[#667085] transition-colors hover:text-[#0B2545]">
+          Post Requirement
+        </a>
         <span className="font-body text-sm text-[#98A2B3]">Property Videos</span>
         <a href="/saved" className="font-body text-sm text-[#667085] transition-colors hover:text-[#0B2545]">
           Saved
