@@ -10,7 +10,7 @@ import {
   labelize,
   type PropertyCategory,
 } from "@/lib/property-options";
-import { createRequirement } from "./actions";
+import type { RequirementActionResult } from "./actions";
 
 type LookupRow = { id: string; name: string };
 type AreaRow = { id: string; city_id: string; name: string };
@@ -25,43 +25,58 @@ const EXPIRY_OPTIONS = [
 const labelClass = "flex flex-col gap-1.5 font-body text-[13.5px] font-medium text-[#344054]";
 const inputClass = "rounded-lg border border-[#EAEFF6] px-3 py-2.5 text-sm text-[#101828] outline-none focus:border-[#2563EB]";
 
+// Reused for both posting a new requirement (app/requirements/new) and
+// editing an existing one (app/requirements/[id]/edit) — same split as
+// PropertyForm between app/properties/new and .../[slug]/edit.
 export function RequirementForm({
   cityId,
   cityName,
   areas,
   societies,
+  action,
+  initial,
+  submitLabel = "Post Requirement — FREE",
+  pendingLabel = "Posting...",
+  successView,
 }: {
   cityId: string;
   cityName: string;
   areas: AreaRow[];
   societies: AreaRow[];
+  action: (prevState: RequirementActionResult, formData: FormData) => Promise<RequirementActionResult>;
+  initial?: {
+    title?: string;
+    description?: string;
+    purpose?: string;
+    category?: PropertyCategory;
+    propertyType?: string;
+    areaId?: string;
+    societyId?: string;
+    minSize?: number;
+    maxSize?: number;
+    sizeUnit?: string;
+    minBudgetLabel?: string;
+    maxBudgetLabel?: string;
+    paymentType?: string;
+    possessionRequired?: boolean;
+    bedroomsMin?: number;
+    bathroomsMin?: number;
+    furnishedStatus?: string;
+    expiryDays?: number;
+  };
+  submitLabel?: string;
+  pendingLabel?: string;
+  successView?: React.ReactNode;
 }) {
-  const [state, formAction, pending] = useActionState(createRequirement, null);
-  const [category, setCategory] = useState<PropertyCategory | "">("");
+  const [state, formAction, pending] = useActionState(action, null);
+  const [category, setCategory] = useState<PropertyCategory | "">(initial?.category ?? "");
 
   const availableTypes = category ? PROPERTY_TYPES_BY_CATEGORY[category] : [];
   const filteredAreas = useMemo(() => areas.filter((a) => a.city_id === cityId), [areas, cityId]);
   const filteredSocieties = useMemo(() => societies.filter((s) => s.city_id === cityId), [societies, cityId]);
 
-  if (state && "ok" in state) {
-    return (
-      <div className="mx-auto w-full max-w-[560px] rounded-2xl bg-white p-8 text-center shadow-[0_6px_18px_rgba(16,24,40,0.06)]">
-        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#DCFCE7] text-2xl">
-          ✓
-        </div>
-        <h2 className="mb-2 font-display text-lg font-bold text-[#101828]">Requirement posted</h2>
-        <p className="mb-6 font-body text-sm text-[#667085]">
-          We&apos;ll match it against live listings automatically and notify you the moment a strong match shows up —
-          no need to keep searching yourself.
-        </p>
-        <a
-          href="/search"
-          className="inline-block rounded-lg bg-[#0B2545] px-5 py-2.5 font-display text-sm font-bold text-white"
-        >
-          Browse properties instead
-        </a>
-      </div>
-    );
+  if (state && "ok" in state && successView) {
+    return successView;
   }
 
   return (
@@ -81,7 +96,7 @@ export function RequirementForm({
         <div className="grid grid-cols-2 gap-4">
           <label className={labelClass}>
             Purpose *
-            <select name="purpose" required defaultValue="SALE" className={inputClass}>
+            <select name="purpose" required defaultValue={initial?.purpose ?? "SALE"} className={inputClass}>
               {PROPERTY_PURPOSES.map((p) => (
                 <option key={p} value={p}>
                   {p === "SALE" ? "Buy" : "Rent"}
@@ -110,7 +125,7 @@ export function RequirementForm({
 
         <label className={labelClass}>
           Property type
-          <select name="property_type" className={inputClass} disabled={!category} defaultValue="">
+          <select name="property_type" className={inputClass} disabled={!category} defaultValue={initial?.propertyType ?? ""}>
             <option value="">{category ? "Any type" : "Choose a category first"}</option>
             {availableTypes.map((t) => (
               <option key={t} value={t}>
@@ -124,6 +139,7 @@ export function RequirementForm({
           Title
           <input
             name="title"
+            defaultValue={initial?.title}
             className={inputClass}
             placeholder={`e.g. 5 Marla Plot in DHA Phase 9, ${cityName}`}
           />
@@ -131,7 +147,7 @@ export function RequirementForm({
 
         <label className={labelClass}>
           Anything else sellers should know?
-          <textarea name="description" rows={3} className={inputClass} placeholder="Optional" />
+          <textarea name="description" rows={3} defaultValue={initial?.description} className={inputClass} placeholder="Optional" />
         </label>
       </section>
 
@@ -146,7 +162,7 @@ export function RequirementForm({
         <div className="grid grid-cols-2 gap-4">
           <label className={labelClass}>
             Area
-            <select name="area_id" className={inputClass} defaultValue="">
+            <select name="area_id" className={inputClass} defaultValue={initial?.areaId ?? ""}>
               <option value="">Any area</option>
               {filteredAreas.map((a) => (
                 <option key={a.id} value={a.id}>
@@ -158,7 +174,7 @@ export function RequirementForm({
 
           <label className={labelClass}>
             Society
-            <select name="society_id" className={inputClass} defaultValue="">
+            <select name="society_id" className={inputClass} defaultValue={initial?.societyId ?? ""}>
               <option value="">Any society</option>
               {filteredSocieties.map((s) => (
                 <option key={s.id} value={s.id}>
@@ -176,26 +192,54 @@ export function RequirementForm({
         <div className="grid grid-cols-2 gap-4">
           <label className={labelClass}>
             Min budget (PKR) *
-            <input name="min_budget" required className={inputClass} placeholder="e.g. 1.40 Crore" />
+            <input
+              name="min_budget"
+              required
+              defaultValue={initial?.minBudgetLabel}
+              className={inputClass}
+              placeholder="e.g. 1.40 Crore"
+            />
           </label>
           <label className={labelClass}>
             Max budget (PKR) *
-            <input name="max_budget" required className={inputClass} placeholder="e.g. 1.50 Crore" />
+            <input
+              name="max_budget"
+              required
+              defaultValue={initial?.maxBudgetLabel}
+              className={inputClass}
+              placeholder="e.g. 1.50 Crore"
+            />
           </label>
         </div>
 
         <div className="grid grid-cols-3 gap-4">
           <label className={labelClass}>
             Min size
-            <input name="min_size" type="number" min={0} step="0.01" className={inputClass} placeholder="Optional" />
+            <input
+              name="min_size"
+              type="number"
+              min={0}
+              step="0.01"
+              defaultValue={initial?.minSize}
+              className={inputClass}
+              placeholder="Optional"
+            />
           </label>
           <label className={labelClass}>
             Max size
-            <input name="max_size" type="number" min={0} step="0.01" className={inputClass} placeholder="Optional" />
+            <input
+              name="max_size"
+              type="number"
+              min={0}
+              step="0.01"
+              defaultValue={initial?.maxSize}
+              className={inputClass}
+              placeholder="Optional"
+            />
           </label>
           <label className={labelClass}>
             Unit
-            <select name="size_unit" className={inputClass} defaultValue="">
+            <select name="size_unit" className={inputClass} defaultValue={initial?.sizeUnit ?? ""}>
               <option value="">—</option>
               {SIZE_UNITS.map((u) => (
                 <option key={u} value={u}>
@@ -209,7 +253,7 @@ export function RequirementForm({
         <div className="grid grid-cols-2 gap-4">
           <label className={labelClass}>
             Payment
-            <select name="payment_type" className={inputClass} defaultValue="ANY">
+            <select name="payment_type" className={inputClass} defaultValue={initial?.paymentType ?? "ANY"}>
               {PAYMENT_TYPES.map((p) => (
                 <option key={p} value={p}>
                   {labelize(p)}
@@ -219,7 +263,7 @@ export function RequirementForm({
           </label>
           <label className={labelClass}>
             Furnished
-            <select name="furnished_status" className={inputClass} defaultValue="">
+            <select name="furnished_status" className={inputClass} defaultValue={initial?.furnishedStatus ?? ""}>
               <option value="">No preference</option>
               {FURNISHED_STATUSES.filter((s) => s !== "NOT_APPLICABLE" && s !== "NOT_SPECIFIED").map((s) => (
                 <option key={s} value={s}>
@@ -233,16 +277,35 @@ export function RequirementForm({
         <div className="grid grid-cols-2 gap-4">
           <label className={labelClass}>
             Min bedrooms
-            <input name="bedrooms_min" type="number" min={0} className={inputClass} placeholder="Optional" />
+            <input
+              name="bedrooms_min"
+              type="number"
+              min={0}
+              defaultValue={initial?.bedroomsMin}
+              className={inputClass}
+              placeholder="Optional"
+            />
           </label>
           <label className={labelClass}>
             Min bathrooms
-            <input name="bathrooms_min" type="number" min={0} className={inputClass} placeholder="Optional" />
+            <input
+              name="bathrooms_min"
+              type="number"
+              min={0}
+              defaultValue={initial?.bathroomsMin}
+              className={inputClass}
+              placeholder="Optional"
+            />
           </label>
         </div>
 
         <label className="flex items-center gap-2.5 font-body text-sm text-[#344054]">
-          <input name="possession_required" type="checkbox" className="h-4 w-4" />
+          <input
+            name="possession_required"
+            type="checkbox"
+            defaultChecked={initial?.possessionRequired}
+            className="h-4 w-4"
+          />
           I need possession immediately (can&apos;t wait for construction)
         </label>
       </section>
@@ -250,12 +313,18 @@ export function RequirementForm({
       <section className="flex flex-col gap-3 rounded-2xl bg-white p-6 shadow-[0_6px_18px_rgba(16,24,40,0.06)]">
         <h2 className="font-display text-base font-bold text-[#101828]">How long should this stay active?</h2>
         <div className="flex gap-2.5">
-          {EXPIRY_OPTIONS.map((opt, i) => (
+          {EXPIRY_OPTIONS.map((opt) => (
             <label
               key={opt.days}
               className="flex flex-1 cursor-pointer items-center justify-center rounded-lg border border-[#EAEFF6] py-2.5 font-display text-[13px] font-bold text-[#344054] has-[:checked]:border-[#2563EB] has-[:checked]:bg-[#EFF6FF] has-[:checked]:text-[#2563EB]"
             >
-              <input type="radio" name="expiry_days" value={opt.days} defaultChecked={i === 0} className="sr-only" />
+              <input
+                type="radio"
+                name="expiry_days"
+                value={opt.days}
+                defaultChecked={(initial?.expiryDays ?? 30) === opt.days}
+                className="sr-only"
+              />
               {opt.label}
             </label>
           ))}
@@ -267,7 +336,7 @@ export function RequirementForm({
         disabled={pending}
         className="self-start rounded-[10px] bg-gradient-to-br from-[#F59E0B] to-[#EA7D0B] px-6 py-3 font-display text-sm font-extrabold text-white shadow-[0_4px_12px_rgba(245,158,11,0.3)] disabled:opacity-50"
       >
-        {pending ? "Posting..." : "Post Requirement — FREE"}
+        {pending ? pendingLabel : submitLabel}
       </button>
     </form>
   );

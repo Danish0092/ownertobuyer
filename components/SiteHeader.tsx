@@ -43,6 +43,11 @@ export async function SiteHeader() {
             My Properties
           </a>
         )}
+        {user && (
+          <a href="/requirements" className="font-body text-sm text-[#667085] transition-colors hover:text-[#0B2545]">
+            My Requirements
+          </a>
+        )}
       </nav>
       <div className="ml-auto flex items-center gap-2.5">
         <a
