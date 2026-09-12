@@ -72,6 +72,23 @@ export default async function DashboardPage({
     }
   }
 
+  // All of a seller's own properties are covered by "seller_id = my
+  // own id", not just the ones on this tab, so this stays accurate
+  // regardless of which status filter is active above.
+  const matchCounts = new Map<string, number>();
+  let totalMatches = 0;
+  {
+    const { data: allOwnPropertyIds } = await supabase.from("properties").select("id").eq("seller_id", user.id);
+    const ids = (allOwnPropertyIds ?? []).map((p) => p.id);
+    if (ids.length > 0) {
+      const { data: matches } = await supabase.from("requirement_matches").select("property_id").in("property_id", ids);
+      for (const m of matches ?? []) {
+        matchCounts.set(m.property_id, (matchCounts.get(m.property_id) ?? 0) + 1);
+        totalMatches++;
+      }
+    }
+  }
+
   const userInitial = (profile?.full_name || "?").charAt(0).toUpperCase();
 
   return (
@@ -105,12 +122,22 @@ export default async function DashboardPage({
 
       <div className="mx-auto flex w-full max-w-[1140px] flex-wrap items-center justify-between gap-2.5 px-6 pt-6">
         <h3 className="m-0 font-display text-lg font-bold text-[#101828]">My Properties</h3>
-        <a
-          href="/properties/new"
-          className="rounded-[10px] bg-gradient-to-br from-[#F59E0B] to-[#EA7D0B] px-5 py-2.5 font-display text-[13px] font-extrabold text-white"
-        >
-          + Post New Property
-        </a>
+        <div className="flex items-center gap-2.5">
+          {totalMatches > 0 && (
+            <a
+              href="/dashboard/matches"
+              className="rounded-[10px] bg-[#ECFDF5] px-4 py-2.5 font-display text-[13px] font-bold text-[#15803D]"
+            >
+              🎯 {totalMatches} Potential Buyer{totalMatches === 1 ? "" : "s"}
+            </a>
+          )}
+          <a
+            href="/properties/new"
+            className="rounded-[10px] bg-gradient-to-br from-[#F59E0B] to-[#EA7D0B] px-5 py-2.5 font-display text-[13px] font-extrabold text-white"
+          >
+            + Post New Property
+          </a>
+        </div>
       </div>
 
       <div className="mx-auto flex w-full max-w-[1140px] gap-2 overflow-x-auto px-6 pt-4">
@@ -162,6 +189,14 @@ export default async function DashboardPage({
                   <span>💬 {counts.whatsapp}</span>
                   <span>📞 {counts.call}</span>
                 </div>
+                {(matchCounts.get(p.id) ?? 0) > 0 && (
+                  <a
+                    href={`/dashboard/matches?property=${p.id}`}
+                    className="self-start rounded-full bg-[#ECFDF5] px-2.5 py-1 font-display text-[11px] font-bold text-[#15803D]"
+                  >
+                    🎯 {matchCounts.get(p.id)} potential buyer{matchCounts.get(p.id) === 1 ? "" : "s"}
+                  </a>
+                )}
                 <div className="mt-1 flex gap-2">
                   <a
                     href={`/properties/${p.slug}/edit`}
