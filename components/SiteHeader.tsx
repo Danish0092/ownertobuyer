@@ -22,15 +22,6 @@ export async function SiteHeader() {
         OwnerTo<span className="text-[#F59E0B]">Buyer</span>
       </a>
       <nav className="ml-3 hidden flex-wrap gap-5 lg:flex">
-        <a href="/search?purpose=SALE" className="font-body text-sm text-[#667085] transition-colors hover:text-[#0B2545]">
-          Buy
-        </a>
-        <a href="/search?purpose=RENT" className="font-body text-sm text-[#667085] transition-colors hover:text-[#0B2545]">
-          Rent
-        </a>
-        <a href="/search?seller=OWNER" className="font-body text-sm text-[#667085] transition-colors hover:text-[#0B2545]">
-          Owner Direct
-        </a>
         <a href="/requirements/new" className="font-body text-sm text-[#667085] transition-colors hover:text-[#0B2545]">
           Post Requirement
         </a>
