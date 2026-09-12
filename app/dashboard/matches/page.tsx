@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { SiteHeader } from "@/components/SiteHeader";
 import { priceRangeLabel, sizeRangeLabel } from "@/lib/format";
 import { labelize } from "@/lib/property-options";
+import { ContactBuyerButtons } from "@/components/ContactBuyerButtons";
 
 const SCORE_STYLE = (score: number) =>
   score >= 80
@@ -55,6 +56,7 @@ export default async function DashboardMatchesPage({
       cities: { name: string } | null;
       areas: { name: string } | null;
       societies: { name: string } | null;
+      profiles: { full_name: string; phone_number: string | null } | null;
     } | null;
   }[] = [];
 
@@ -66,7 +68,8 @@ export default async function DashboardMatchesPage({
          buyer_requirements(title, purpose, property_category, property_type,
            min_size, max_size, size_unit, min_budget, max_budget, payment_type,
            possession_required, expires_at,
-           cities(name), areas(name), societies(name))`
+           cities(name), areas(name), societies(name),
+           profiles(full_name, phone_number))`
       )
       .in("property_id", propertyIds)
       .order("score", { ascending: false });
@@ -186,10 +189,21 @@ export default async function DashboardMatchesPage({
                     ))}
                   </div>
 
-                  <p className="text-[11.5px] text-[#98A2B3]">
-                    This is what the buyer is looking for, not who they are — direct contact between matched buyers
-                    and sellers isn&apos;t available yet.
-                  </p>
+                  <div className="border-t border-[#F1F5F9] pt-3.5">
+                    <div className="mb-2 flex items-center gap-2">
+                      <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#E0ECFF] font-display text-xs font-bold text-[#2563EB]">
+                        {(r.profiles?.full_name ?? "?").charAt(0)}
+                      </span>
+                      <span className="font-body text-[13px] font-semibold text-[#344054]">
+                        {r.profiles?.full_name ?? "Buyer"}
+                      </span>
+                    </div>
+                    <ContactBuyerButtons
+                      buyerName={r.profiles?.full_name ?? "there"}
+                      phoneNumber={r.profiles?.phone_number ?? null}
+                      requirementTitle={r.title}
+                    />
+                  </div>
                 </div>
               );
             })}
