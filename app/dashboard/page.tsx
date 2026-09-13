@@ -232,7 +232,7 @@ export default async function DashboardPage({
                 : { background: "#EEF2F7", color: "#475467" }
             }
           >
-            {t.label}
+            {isDealer && t.value === "PUBLISHED" ? "Active" : t.label}
           </a>
         ))}
       </div>

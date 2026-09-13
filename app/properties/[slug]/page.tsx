@@ -27,7 +27,7 @@ export default async function PropertyDetailPage({
       `id, seller_id, title, description, purpose, category, property_type, price, price_type,
        size, size_unit, bedrooms, bathrooms, parking_spaces, floor_number, total_floors,
        possession_status, installment_available, furnished_status, construction_status,
-       authority_status, seller_type, status, address, created_at,
+       authority_status, seller_type, representation_confirmed, status, address, created_at,
        cities(name), areas(name), societies(name),
        property_amenities(amenities(name)),
        property_media(storage_path, media_type, is_primary, sort_order),
@@ -88,7 +88,10 @@ export default async function PropertyDetailPage({
   ];
 
   const seller = property.profiles;
-  const sellerBadgeText = property.seller_type === "OWNER" ? "OWNER DIRECT SELLER" : "PROPERTY DEALER";
+  // "Represented by" — never implies the realtor owns it, per the
+  // product rule that a realtor is not the owner just because they
+  // posted the listing.
+  const sellerBadgeText = property.seller_type === "OWNER" ? "LISTED BY OWNER" : "LISTED BY REALTOR";
   const sellerJoined = seller?.created_at
     ? new Date(seller.created_at).toLocaleDateString("en-US", { month: "short", year: "numeric" })
     : "—";
@@ -247,20 +250,30 @@ export default async function PropertyDetailPage({
                 {(seller?.full_name ?? "?").charAt(0)}
               </div>
               <div>
-                <div className="font-display font-bold text-[#101828]">{seller?.full_name ?? "Seller"}</div>
+                <div className="font-display font-bold text-[#101828]">
+                  {property.seller_type === "DEALER"
+                    ? `Represented by ${seller?.full_name ?? "Realtor"}`
+                    : (seller?.full_name ?? "Seller")}
+                </div>
                 <div className="text-xs text-[#667085]">
                   {/* Uses this LISTING's seller_type (matches the badge above),
                       not the seller's own profile account_type — those can now
                       legitimately diverge since account_type also covers
                       BUYER/DEVELOPER, which aren't valid ways to describe who's
                       selling a specific property. */}
-                  {property.seller_type === "OWNER" ? "Owner" : "Dealer"} • Joined {sellerJoined}
+                  {property.seller_type === "OWNER" ? "Owner" : "Realtor / Dealer"} • Joined {sellerJoined}
                 </div>
               </div>
             </div>
             <div className="mb-4 text-[12.5px] text-[#475467]">
               {sellerListingsCount ?? 0} active listing{(sellerListingsCount ?? 0) === 1 ? "" : "s"} on OwnerToBuyer
             </div>
+            {property.seller_type === "DEALER" && property.representation_confirmed && (
+              <div className="mb-4 rounded-lg bg-[#F8FAFC] px-3 py-2.5 text-[11.5px] text-[#667085]">
+                ✓ This realtor has declared they are authorized to represent this property. This is a self-declared
+                claim — OwnerToBuyer does not verify ownership or authorization.
+              </div>
+            )}
             <ContactButtons propertyId={property.id} propertyTitle={property.title} phoneNumber={seller?.phone_number ?? null} />
             <p className="mt-3.5 text-center text-[11px] text-[#98A2B3]">
               Verify all property information independently before making any payment or transaction.

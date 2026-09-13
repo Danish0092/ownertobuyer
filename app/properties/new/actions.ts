@@ -31,6 +31,13 @@ export async function createProperty(
   // so listings publish immediately rather than sitting in
   // PENDING_REVIEW forever. Swap this to 'PENDING_REVIEW' once an admin
   // review queue exists.
+  // Kept out of parsePropertyForm/PropertyFields deliberately: that
+  // parser is shared with the edit flow (app/properties/[slug]/edit),
+  // which has no UI for this checkbox — if it went through the shared
+  // fields object, every edit save would silently reset an already-
+  // confirmed Realtor's authorization claim back to false.
+  const representationConfirmed = fields.seller_type === "DEALER" && formData.get("representation_confirmed") === "on";
+
   const { data: property, error } = await supabase
     .from("properties")
     .insert({
@@ -39,6 +46,7 @@ export async function createProperty(
       slug,
       status: "PUBLISHED",
       published_at: new Date().toISOString(),
+      representation_confirmed: representationConfirmed,
     })
     .select("id, slug")
     .single();

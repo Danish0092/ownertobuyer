@@ -150,6 +150,7 @@ export function PostPropertyWizard({
   const videoInputRef = useRef<HTMLInputElement>(null);
 
   const [sellerType, setSellerType] = useState<string | null>(defaultSellerType || null);
+  const [representationConfirmed, setRepresentationConfirmed] = useState(false);
 
   const progressColor = (i: number) => (i <= step ? "#2563EB" : "#E4E9F2");
 
@@ -158,9 +159,9 @@ export function PostPropertyWizard({
   const nextDisabled = useMemo(() => {
     if (step === 1) return !purpose || !propertyType;
     if (step === 3) return !priceText.trim() || !size.trim();
-    if (step === 5) return !sellerType;
+    if (step === 5) return !sellerType || (sellerType === "DEALER" && !representationConfirmed);
     return false;
-  }, [step, purpose, propertyType, priceText, size, sellerType]);
+  }, [step, purpose, propertyType, priceText, size, sellerType, representationConfirmed]);
 
   function addPhotos(files: FileList | null) {
     if (!files) return;
@@ -182,6 +183,7 @@ export function PostPropertyWizard({
 
   function handlePublish() {
     if (!propertyType || !sellerType) return;
+    if (sellerType === "DEALER" && !representationConfirmed) return;
     const price = parsePakistaniPrice(priceText);
     if (price === null) {
       setError('Price didn\'t parse — try a plain number or "5.25 Crore" style.');
@@ -218,6 +220,7 @@ export function PostPropertyWizard({
     if (installments) formData.set("installment_available", "on");
     if (description) formData.set("description", description);
     formData.set("seller_type", sellerType);
+    if (sellerType === "DEALER" && representationConfirmed) formData.set("representation_confirmed", "on");
     photos.forEach((f) => formData.append("photos", f));
     if (video) formData.set("video", video);
 
@@ -558,11 +561,27 @@ export function PostPropertyWizard({
             </p>
           </button>
           <button type="button" onClick={() => setSellerType("DEALER")} className={cardBtn(sellerType === "DEALER")}>
-            <div className="mb-1.5 font-display text-base font-extrabold">🏢 DEALER / AGENT</div>
+            <div className="mb-1.5 font-display text-base font-extrabold">🏢 REALTOR / DEALER</div>
             <p className="m-0 text-[13px] opacity-90">
-              Your listing will be labeled Dealer so buyers know it&apos;s from a professional agent.
+              Your listing will be labeled &ldquo;Represented by&rdquo; you, not as if you own it — buyers will know
+              it&apos;s from a professional agent representing the owner.
             </p>
           </button>
+
+          {sellerType === "DEALER" && (
+            <label className="flex items-start gap-2.5 rounded-xl border-[1.5px] border-[#FDE9B8] bg-[#FFF9EB] p-3.5 text-[12.5px] text-[#8A5A0A]">
+              <input
+                type="checkbox"
+                checked={representationConfirmed}
+                onChange={(e) => setRepresentationConfirmed(e.target.checked)}
+                className="mt-0.5 h-4 w-4 flex-none"
+              />
+              <span>
+                I confirm I am authorized by the property owner to list and market this property on their behalf.
+                This is your own declaration — OwnerToBuyer does not verify ownership or authorization.
+              </span>
+            </label>
+          )}
         </div>
       )}
 
