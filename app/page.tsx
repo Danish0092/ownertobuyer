@@ -6,6 +6,9 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { priceLabel, specsLine, areaLine } from "@/lib/format";
 import { resolveCardMedia } from "@/lib/property-media";
+import { ProjectCard } from "@/components/ProjectCard";
+import { resolveProjectCardMedia } from "@/lib/project-media";
+import { labelize } from "@/lib/property-options";
 
 // Landing page rebuilt from the OwnerToBuyer Claude Design artifact
 // (colors, fonts, copy, and section layout reproduced from its
@@ -41,6 +44,7 @@ export default async function Home() {
     { count: farmCount },
     { data: featured },
     { data: areas },
+    { data: featuredProjects },
   ] = await Promise.all([
     supabase.from("properties").select("id", { count: "exact", head: true }).eq("status", "PUBLISHED").eq("property_type", "HOUSE"),
     supabase.from("properties").select("id", { count: "exact", head: true }).eq("status", "PUBLISHED").eq("property_type", "PLOT"),
@@ -57,6 +61,14 @@ export default async function Home() {
       .order("created_at", { ascending: false })
       .limit(4),
     supabase.from("areas").select("id, name, cities(name)").order("name").limit(8),
+    supabase
+      .from("projects")
+      .select(
+        "id, name, slug, developer_name, min_price, max_price, development_status, cities(name), areas(name), societies(name), project_media(storage_path, media_type, is_primary, sort_order)"
+      )
+      .eq("status", "PUBLISHED")
+      .order("created_at", { ascending: false })
+      .limit(4),
   ]);
 
   const counts: Record<string, number> = {
@@ -81,6 +93,17 @@ export default async function Home() {
     photoUrl: cardMedia.get(p.id)?.photoUrl,
     hasVideo: cardMedia.get(p.id)?.hasVideo ?? false,
     href: `/properties/${p.slug}`,
+  }));
+
+  const projectCardMedia = await resolveProjectCardMedia(supabase, featuredProjects ?? []);
+  const featuredProjectCards = (featuredProjects ?? []).map((p) => ({
+    name: p.name,
+    developerName: p.developer_name,
+    locationLine: [p.societies?.name, p.areas?.name, p.cities?.name].filter(Boolean).join(", ") || "Lahore",
+    priceLabel: p.min_price ? priceLabel(p.min_price, "TOTAL") : p.max_price ? priceLabel(p.max_price, "TOTAL") : null,
+    developmentStatusLabel: labelize(p.development_status),
+    photoUrl: projectCardMedia.get(p.id)?.photoUrl,
+    href: `/projects/${p.slug}`,
   }));
 
   return (
@@ -167,6 +190,26 @@ export default async function Home() {
           </div>
         )}
       </section>
+
+      {/* Featured developer/society projects */}
+      {featuredProjectCards.length > 0 && (
+        <section className="mx-auto w-full max-w-[1140px] px-6 pb-2 pt-14">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <div>
+              <h2 className="m-0 mb-1 font-display text-[28px] font-extrabold text-[#101828]">New Developments</h2>
+              <p className="m-0 text-sm text-[#667085]">Housing societies and developer projects in Lahore.</p>
+            </div>
+            <a href="/projects" className="font-display text-[13px] font-bold text-[#0D9488]">
+              View all →
+            </a>
+          </div>
+          <div className="mt-5.5 grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-4.5">
+            {featuredProjectCards.map((card) => (
+              <ProjectCard key={card.href} data={card} />
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Video discovery */}
       <section className="mt-14 bg-gradient-to-b from-[#EFFCF8] to-[#F7F9FC] px-6 py-14">

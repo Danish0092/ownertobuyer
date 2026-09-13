@@ -22,6 +22,9 @@ export async function SiteHeader() {
         OwnerTo<span className="text-[#F59E0B]">Buyer</span>
       </a>
       <nav className="ml-3 hidden flex-wrap gap-5 lg:flex">
+        <a href="/projects" className="font-body text-sm text-[#667085] transition-colors hover:text-[#0B2545]">
+          Projects
+        </a>
         <a href="/requirements/new" className="font-body text-sm text-[#667085] transition-colors hover:text-[#0B2545]">
           Post Requirement
         </a>
