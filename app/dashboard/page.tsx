@@ -5,6 +5,7 @@ import { priceLabel, areaLine } from "@/lib/format";
 import { labelize, ACCOUNT_TYPE_LABELS, type AccountType } from "@/lib/property-options";
 import { logoutAction } from "./actions";
 import { DeletePropertyButton } from "./DeletePropertyButton";
+import { HideProjectButton } from "@/app/projects/HideProjectButton";
 
 const TABS = [
   { value: "ALL", label: "All", statuses: null },
@@ -106,21 +107,94 @@ export default async function DashboardPage({
   }
 
   if (accountType === "DEVELOPER") {
+    const { data: projects } = await supabase
+      .from("projects")
+      .select("id, name, slug, status, development_status, min_price, max_price")
+      .eq("developer_id", user.id)
+      .order("created_at", { ascending: false });
+
+    const PROJECT_STATUS_STYLE: Record<string, { bg: string; fg: string }> = {
+      PUBLISHED: { bg: "#DCFCE7", fg: "#15803D" },
+      DRAFT: { bg: "#FFF7E6", fg: "#B45309" },
+      HIDDEN: { bg: "#F1F5F9", fg: "#475467" },
+    };
+
     return (
       <div className="flex flex-1 flex-col bg-[#F7F9FC] pb-10 font-body">
         <SiteHeader />
         {header}
-        <div className="mx-auto w-full max-w-[1140px] px-6 pt-7">
-          <div className="mb-5 rounded-2xl border border-[#EAEFF6] bg-white px-5 py-4 font-body text-sm text-[#667085] shadow-[0_6px_18px_rgba(16,24,40,0.06)]">
-            Developer/Society project management is on its way — you&apos;ll be able to publish a project with unit
-            inventory, pricing, and payment plans here.
-          </div>
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4">
-            <DashCard icon="🏗️" label="My Projects" comingSoon />
-            <DashCard icon="📦" label="Project Inventory" comingSoon />
-            <DashCard icon="💬" label="Project Leads / Messages" comingSoon />
+        <div className="mx-auto flex w-full max-w-[1140px] flex-wrap items-center justify-between gap-2.5 px-6 pt-6">
+          <h3 className="m-0 font-display text-lg font-bold text-[#101828]">My Projects</h3>
+          <div className="flex items-center gap-2.5">
+            <span
+              title="Project inquiries are coming soon"
+              className="cursor-default rounded-[10px] bg-[#F1F5F9] px-4 py-2.5 font-display text-[13px] font-bold text-[#98A2B3]"
+            >
+              Project Leads / Messages · Coming Soon
+            </span>
+            <a
+              href="/projects/new"
+              className="rounded-[10px] bg-gradient-to-br from-[#F59E0B] to-[#EA7D0B] px-5 py-2.5 font-display text-[13px] font-extrabold text-white"
+            >
+              + Add Project
+            </a>
           </div>
         </div>
+
+        {projects && projects.length > 0 ? (
+          <div className="mx-auto grid w-full max-w-[1140px] grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-4 px-6 pt-4.5">
+            {projects.map((p) => {
+              const style = PROJECT_STATUS_STYLE[p.status] ?? PROJECT_STATUS_STYLE.DRAFT;
+              return (
+                <div
+                  key={p.id}
+                  className="flex flex-col gap-2 rounded-2xl border border-[#EAEFF6] bg-white p-4.5 shadow-[0_6px_18px_rgba(16,24,40,0.06)]"
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="font-display text-[15px] font-bold text-[#101828]">{p.name}</div>
+                    <span
+                      className="rounded-full px-2.5 py-1 font-display text-[11px] font-bold"
+                      style={{ background: style.bg, color: style.fg }}
+                    >
+                      {labelize(p.status)}
+                    </span>
+                  </div>
+                  <div className="text-xs font-medium text-[#667085]">{labelize(p.development_status)}</div>
+                  {(p.min_price || p.max_price) && (
+                    <div className="font-display text-[16px] font-extrabold text-[#0B2545]">
+                      From {priceLabel(p.min_price ?? p.max_price, "TOTAL")}
+                    </div>
+                  )}
+                  <div className="mt-1 flex gap-2">
+                    <a
+                      href={`/projects/${p.slug}/inventory`}
+                      className="flex-1 rounded-[9px] bg-[#F1F5F9] py-2.5 text-center font-display text-[12.5px] font-bold text-[#475467]"
+                    >
+                      Inventory
+                    </a>
+                    <a
+                      href={`/projects/${p.slug}/edit`}
+                      className="flex-1 rounded-[9px] bg-[#EFF6FF] py-2.5 text-center font-display text-[12.5px] font-bold text-[#1D4ED8]"
+                    >
+                      Edit
+                    </a>
+                    {p.status !== "HIDDEN" && <HideProjectButton projectId={p.id} name={p.name} />}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="px-6 py-16 text-center text-[#667085]">
+            <h4 className="mb-3 font-display text-base font-bold text-[#101828]">You haven&apos;t added any projects yet.</h4>
+            <a
+              href="/projects/new"
+              className="inline-block rounded-[10px] bg-gradient-to-br from-[#F59E0B] to-[#EA7D0B] px-5.5 py-3 font-display text-[13.5px] font-extrabold text-white"
+            >
+              + Add Project
+            </a>
+          </div>
+        )}
       </div>
     );
   }
