@@ -269,15 +269,18 @@ export default async function DashboardPage({
               >
                 Client Requirements
               </a>
-              <span
-                title="Automatic dealer-to-buyer matching is coming soon"
-                className="cursor-default rounded-[10px] bg-[#F1F5F9] px-4 py-2.5 font-display text-[13px] font-bold text-[#98A2B3]"
+              <a
+                href="/dashboard/dealer-matches"
+                className="rounded-[10px] bg-[#ECFDF5] px-4 py-2.5 font-display text-[13px] font-bold text-[#15803D]"
               >
-                Dealer Matches · Coming Soon
-              </span>
+                🎯 Dealer Matches
+              </a>
             </>
           )}
-          {totalMatches > 0 && (
+          {/* For a Dealer, the "Dealer Matches" link above already covers
+              this same data plus their client-requirement matches, so
+              showing both would just be two overlapping links. */}
+          {!isDealer && totalMatches > 0 && (
             <a
               href="/dashboard/matches"
               className="rounded-[10px] bg-[#ECFDF5] px-4 py-2.5 font-display text-[13px] font-bold text-[#15803D]"
