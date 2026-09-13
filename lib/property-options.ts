@@ -82,7 +82,25 @@ export const AUTHORITY_STATUSES = [
   "OTHER",
 ] as const;
 
+// properties.seller_type — who's listed as selling THIS property.
+// Deliberately separate from a profile's own account_type (a dealer
+// account isn't forced to have every listing tagged dealer-owned).
 export const SELLER_TYPES = ["OWNER", "DEALER"] as const;
+
+// profiles.account_type — the four product account types. Distinct
+// from SELLER_TYPES above even though OWNER/DEALER happen to overlap;
+// this drives which dashboard a user sees, not property listing
+// authorization (RLS never checks account_type, only seller_id/buyer_id
+// ownership — see 20260913120000_add_buyer_developer_account_types.sql).
+export const ACCOUNT_TYPES = ["OWNER", "BUYER", "DEALER", "DEVELOPER"] as const;
+export type AccountType = (typeof ACCOUNT_TYPES)[number];
+
+export const ACCOUNT_TYPE_LABELS: Record<AccountType, string> = {
+  OWNER: "Owner",
+  BUYER: "Buyer",
+  DEALER: "Realtor / Dealer",
+  DEVELOPER: "Developer / Society",
+};
 
 export function labelize(value: string): string {
   return value

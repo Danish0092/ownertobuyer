@@ -249,7 +249,12 @@ export default async function PropertyDetailPage({
               <div>
                 <div className="font-display font-bold text-[#101828]">{seller?.full_name ?? "Seller"}</div>
                 <div className="text-xs text-[#667085]">
-                  {seller?.account_type === "DEALER" ? "Dealer" : "Owner"} • Joined {sellerJoined}
+                  {/* Uses this LISTING's seller_type (matches the badge above),
+                      not the seller's own profile account_type — those can now
+                      legitimately diverge since account_type also covers
+                      BUYER/DEVELOPER, which aren't valid ways to describe who's
+                      selling a specific property. */}
+                  {property.seller_type === "OWNER" ? "Owner" : "Dealer"} • Joined {sellerJoined}
                 </div>
               </div>
             </div>

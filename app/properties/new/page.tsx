@@ -35,7 +35,10 @@ export default async function NewPropertyPage() {
         cityName={city?.name ?? "Lahore"}
         areas={areas ?? []}
         societies={societies ?? []}
-        defaultSellerType={profile?.account_type ?? "OWNER"}
+        // properties.seller_type only has OWNER/DEALER — account_type can now
+        // also be BUYER/DEVELOPER, neither of which is a valid seller_type, so
+        // this maps rather than passing account_type straight through.
+        defaultSellerType={profile?.account_type === "DEALER" ? "DEALER" : "OWNER"}
       />
     </div>
   );

@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { SELLER_TYPES, labelize } from "@/lib/property-options";
+import { ACCOUNT_TYPES, ACCOUNT_TYPE_LABELS } from "@/lib/property-options";
 import { updateProfile } from "./actions";
 
 type Profile = {
@@ -86,12 +86,13 @@ export function ProfileForm({
       <label className={labelClass}>
         Account type *
         <select name="account_type" required defaultValue={profile.account_type} className={inputClass}>
-          {SELLER_TYPES.map((t) => (
+          {ACCOUNT_TYPES.map((t) => (
             <option key={t} value={t}>
-              {labelize(t)}
+              {ACCOUNT_TYPE_LABELS[t]}
             </option>
           ))}
         </select>
+        <span className="text-xs text-zinc-500">Changes which dashboard you see — you can change this anytime.</span>
       </label>
 
       <label className={labelClass}>

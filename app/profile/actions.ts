@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { SELLER_TYPES } from "@/lib/property-options";
+import { ACCOUNT_TYPES } from "@/lib/property-options";
 
 export type ProfileActionResult = { error: string } | { ok: true } | null;
 
@@ -30,7 +30,7 @@ export async function updateProfile(
   const bio = str(formData, "bio");
 
   if (!fullName) return { error: "Name is required." };
-  if (!accountType || !SELLER_TYPES.includes(accountType as (typeof SELLER_TYPES)[number])) {
+  if (!accountType || !ACCOUNT_TYPES.includes(accountType as (typeof ACCOUNT_TYPES)[number])) {
     return { error: "Invalid account type." };
   }
 

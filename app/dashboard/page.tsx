@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { SiteHeader } from "@/components/SiteHeader";
 import { priceLabel, areaLine } from "@/lib/format";
-import { labelize } from "@/lib/property-options";
+import { labelize, ACCOUNT_TYPE_LABELS, type AccountType } from "@/lib/property-options";
 import { logoutAction } from "./actions";
 import { DeletePropertyButton } from "./DeletePropertyButton";
 
@@ -41,6 +41,94 @@ export default async function DashboardPage({
     .select("full_name, account_type, phone_verified")
     .eq("id", user.id)
     .single();
+
+  const accountType = (profile?.account_type ?? "OWNER") as AccountType;
+  const userInitial = (profile?.full_name || "?").charAt(0).toUpperCase();
+
+  // The header bar (avatar, name, account type, logout) is identical
+  // across all four dashboards — only what's below it differs.
+  const header = (
+    <div className="bg-gradient-to-r from-[#0B2545] to-[#1D4ED8] px-6 py-8">
+      <div className="mx-auto flex max-w-[1140px] items-center gap-3.5">
+        <div className="flex h-[54px] w-[54px] items-center justify-center rounded-full bg-white/16 font-display text-xl font-extrabold text-white">
+          {userInitial}
+        </div>
+        <div>
+          <div className="font-display text-lg font-extrabold text-white">{profile?.full_name ?? "User"}</div>
+          <div className="text-[12.5px] text-[#B7D4FF]">
+            {ACCOUNT_TYPE_LABELS[accountType]}
+            {accountType !== "BUYER" && (
+              <> • Mobile {profile?.phone_verified ? "verified ✓" : "not verified"}</>
+            )}
+          </div>
+        </div>
+        <form action={logoutAction} className="ml-auto">
+          <button
+            type="submit"
+            className="rounded-[10px] bg-white/12 px-4 py-2.5 font-display text-[12.5px] font-bold text-white"
+          >
+            Logout
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+
+  if (accountType === "BUYER") {
+    const [{ count: requirementCount }, { count: favoriteCount }] = await Promise.all([
+      supabase.from("buyer_requirements").select("id", { count: "exact", head: true }).eq("buyer_id", user.id),
+      supabase.from("favorites").select("id", { count: "exact", head: true }).eq("user_id", user.id),
+    ]);
+
+    const { data: myRequirementIds } = await supabase.from("buyer_requirements").select("id").eq("buyer_id", user.id);
+    const ids = (myRequirementIds ?? []).map((r) => r.id);
+    let matchCount = 0;
+    if (ids.length > 0) {
+      const { count } = await supabase
+        .from("requirement_matches")
+        .select("id", { count: "exact", head: true })
+        .in("requirement_id", ids);
+      matchCount = count ?? 0;
+    }
+
+    return (
+      <div className="flex flex-1 flex-col bg-[#F7F9FC] pb-10 font-body">
+        <SiteHeader />
+        {header}
+        <div className="mx-auto grid w-full max-w-[1140px] grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4 px-6 pt-7">
+          <DashCard href="/requirements" icon="📋" label="My Requirements" value={requirementCount ?? 0} />
+          <DashCard href="/requirements/matches" icon="🎯" label="Matching Properties" value={matchCount} />
+          <DashCard href="/saved" icon="❤️" label="Favorites" value={favoriteCount ?? 0} />
+          <DashCard icon="💬" label="Messages" comingSoon />
+        </div>
+      </div>
+    );
+  }
+
+  if (accountType === "DEVELOPER") {
+    return (
+      <div className="flex flex-1 flex-col bg-[#F7F9FC] pb-10 font-body">
+        <SiteHeader />
+        {header}
+        <div className="mx-auto w-full max-w-[1140px] px-6 pt-7">
+          <div className="mb-5 rounded-2xl border border-[#EAEFF6] bg-white px-5 py-4 font-body text-sm text-[#667085] shadow-[0_6px_18px_rgba(16,24,40,0.06)]">
+            Developer/Society project management is on its way — you&apos;ll be able to publish a project with unit
+            inventory, pricing, and payment plans here.
+          </div>
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4">
+            <DashCard icon="🏗️" label="My Projects" comingSoon />
+            <DashCard icon="📦" label="Project Inventory" comingSoon />
+            <DashCard icon="💬" label="Project Leads / Messages" comingSoon />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // OWNER and DEALER (Realtor) both use the property-list dashboard
+  // below — a Realtor's listings are just their own properties with
+  // seller_type = DEALER, already fully supported by existing RLS.
+  const isDealer = accountType === "DEALER";
 
   let propertiesQuery = supabase
     .from("properties")
@@ -89,40 +177,32 @@ export default async function DashboardPage({
     }
   }
 
-  const userInitial = (profile?.full_name || "?").charAt(0).toUpperCase();
-
   return (
     <div className="flex flex-1 flex-col bg-[#F7F9FC] pb-6 font-body">
       <SiteHeader />
-
-      <div className="bg-gradient-to-r from-[#0B2545] to-[#1D4ED8] px-6 py-8">
-        <div className="mx-auto flex max-w-[1140px] items-center gap-3.5">
-          <div className="flex h-[54px] w-[54px] items-center justify-center rounded-full bg-white/16 font-display text-xl font-extrabold text-white">
-            {userInitial}
-          </div>
-          <div>
-            <div className="font-display text-lg font-extrabold text-white">
-              {profile?.full_name ?? "User"}
-            </div>
-            <div className="text-[12.5px] text-[#B7D4FF]">
-              {profile?.account_type === "DEALER" ? "Dealer" : "Owner"} • Mobile{" "}
-              {profile?.phone_verified ? "verified ✓" : "not verified"}
-            </div>
-          </div>
-          <form action={logoutAction} className="ml-auto">
-            <button
-              type="submit"
-              className="rounded-[10px] bg-white/12 px-4 py-2.5 font-display text-[12.5px] font-bold text-white"
-            >
-              Logout
-            </button>
-          </form>
-        </div>
-      </div>
+      {header}
 
       <div className="mx-auto flex w-full max-w-[1140px] flex-wrap items-center justify-between gap-2.5 px-6 pt-6">
-        <h3 className="m-0 font-display text-lg font-bold text-[#101828]">My Properties</h3>
-        <div className="flex items-center gap-2.5">
+        <h3 className="m-0 font-display text-lg font-bold text-[#101828]">
+          {isDealer ? "Represented Properties" : "My Properties"}
+        </h3>
+        <div className="flex flex-wrap items-center gap-2.5">
+          {isDealer && (
+            <>
+              <a
+                href="/requirements"
+                className="rounded-[10px] bg-[#F1F5F9] px-4 py-2.5 font-display text-[13px] font-bold text-[#475467]"
+              >
+                Client Requirements
+              </a>
+              <span
+                title="Automatic dealer-to-buyer matching is coming soon"
+                className="cursor-default rounded-[10px] bg-[#F1F5F9] px-4 py-2.5 font-display text-[13px] font-bold text-[#98A2B3]"
+              >
+                Dealer Matches · Coming Soon
+              </span>
+            </>
+          )}
           {totalMatches > 0 && (
             <a
               href="/dashboard/matches"
@@ -135,7 +215,7 @@ export default async function DashboardPage({
             href="/properties/new"
             className="rounded-[10px] bg-gradient-to-br from-[#F59E0B] to-[#EA7D0B] px-5 py-2.5 font-display text-[13px] font-extrabold text-white"
           >
-            + Post New Property
+            + {isDealer ? "Add Represented Property" : "Post New Property"}
           </a>
         </div>
       </div>
@@ -214,7 +294,7 @@ export default async function DashboardPage({
         <div className="px-6 py-16 text-center text-[#667085]">
           <h4 className="mb-3 font-display text-base font-bold text-[#101828]">
             {activeTab.value === "ALL"
-              ? "You haven't posted any properties yet."
+              ? `You haven't ${isDealer ? "added" : "posted"} any properties yet.`
               : `No properties in "${activeTab.label}".`}
           </h4>
           <a
@@ -227,4 +307,36 @@ export default async function DashboardPage({
       )}
     </div>
   );
+}
+
+function DashCard({
+  href,
+  icon,
+  label,
+  value,
+  comingSoon,
+}: {
+  href?: string;
+  icon: string;
+  label: string;
+  value?: number;
+  comingSoon?: boolean;
+}) {
+  const content = (
+    <div
+      className={`flex flex-col gap-2 rounded-2xl border border-[#EAEFF6] bg-white p-5 shadow-[0_6px_18px_rgba(16,24,40,0.06)] ${
+        comingSoon ? "opacity-60" : ""
+      }`}
+    >
+      <div className="text-2xl">{icon}</div>
+      {value !== undefined && <div className="font-display text-2xl font-extrabold text-[#0B2545]">{value}</div>}
+      <div className="font-display text-[13px] font-bold text-[#344054]">
+        {label}
+        {comingSoon && <span className="ml-1.5 font-body text-[11px] font-medium text-[#98A2B3]">Coming soon</span>}
+      </div>
+    </div>
+  );
+
+  if (comingSoon || !href) return content;
+  return <a href={href}>{content}</a>;
 }
