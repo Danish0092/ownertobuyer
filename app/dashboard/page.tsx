@@ -102,6 +102,16 @@ export default async function DashboardPage({
           <DashCard href="/saved" icon="❤️" label="Favorites" value={favoriteCount ?? 0} />
           <DashCard icon="💬" label="Messages" comingSoon />
         </div>
+
+        <div className="mx-auto w-full max-w-[1140px] px-6 pt-6">
+          <a
+            href="/properties/new"
+            className="flex flex-wrap items-center justify-between gap-2.5 rounded-2xl border border-dashed border-[#EAEFF6] bg-white px-5 py-4 shadow-[0_6px_18px_rgba(16,24,40,0.04)]"
+          >
+            <span className="font-body text-sm text-[#667085]">Have a property to sell or rent?</span>
+            <span className="font-display text-[13px] font-extrabold text-[#1D4ED8]">+ List a Property</span>
+          </a>
+        </div>
       </div>
     );
   }
@@ -296,6 +306,18 @@ export default async function DashboardPage({
           </a>
         </div>
       </div>
+
+      {!isDealer && (
+        <div className="mx-auto w-full max-w-[1140px] px-6 pt-4">
+          <a
+            href="/requirements/new"
+            className="flex flex-wrap items-center justify-between gap-2.5 rounded-2xl border border-dashed border-[#EAEFF6] bg-white px-5 py-4 shadow-[0_6px_18px_rgba(16,24,40,0.04)]"
+          >
+            <span className="font-body text-sm text-[#667085]">Looking for a property?</span>
+            <span className="font-display text-[13px] font-extrabold text-[#1D4ED8]">+ Post a Requirement</span>
+          </a>
+        </div>
+      )}
 
       <div className="mx-auto flex w-full max-w-[1140px] gap-2 overflow-x-auto px-6 pt-4">
         {TABS.map((t) => (

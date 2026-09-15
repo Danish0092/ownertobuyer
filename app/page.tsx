@@ -9,6 +9,8 @@ import { resolveCardMedia } from "@/lib/property-media";
 import { ProjectCard } from "@/components/ProjectCard";
 import { resolveProjectCardMedia } from "@/lib/project-media";
 import { labelize } from "@/lib/property-options";
+import { ROLE_PRIMARY_PATH } from "@/lib/auth-roles";
+import type { AccountType } from "@/lib/property-options";
 
 // Landing page rebuilt from the OwnerToBuyer Claude Design artifact
 // (colors, fonts, copy, and section layout reproduced from its
@@ -32,8 +34,18 @@ const CATEGORIES: {
   { value: "FARM_HOUSE", label: "Farm House", icon: "farmhouse", bg: "#EAF7F1", fg: "#15803D" },
 ];
 
+const ENTRY_POINTS: { role: AccountType; icon: string; label: string }[] = [
+  { role: "OWNER", icon: "🏠", label: "I Have a Property" },
+  { role: "BUYER", icon: "🔎", label: "I Need a Property" },
+  { role: "DEALER", icon: "👔", label: "I Am a Realtor" },
+  { role: "DEVELOPER", icon: "🏗️", label: "I Am a Developer" },
+];
+
 export default async function Home() {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   const [
     { count: houseCount },
@@ -127,6 +139,21 @@ export default async function Home() {
           </p>
 
           <HeroSearch />
+
+          <div className="mt-2 grid w-full max-w-[700px] grid-cols-2 gap-3 sm:grid-cols-4">
+            {ENTRY_POINTS.map((entry) => (
+              <a
+                key={entry.role}
+                href={user ? ROLE_PRIMARY_PATH[entry.role] : `/signup?role=${entry.role}`}
+                className="flex flex-col items-center gap-1.5 rounded-2xl bg-white/10 px-3 py-4 text-center backdrop-blur-sm transition-colors hover:bg-white/16"
+              >
+                <span className="text-xl" aria-hidden>
+                  {entry.icon}
+                </span>
+                <span className="font-display text-[12.5px] font-bold text-white">{entry.label}</span>
+              </a>
+            ))}
+          </div>
         </div>
       </section>
 

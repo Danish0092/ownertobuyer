@@ -39,7 +39,12 @@ export async function updateSession(request: NextRequest) {
   // without this check they'd keep full access until it expired.
   // Skip the extra DB round trip entirely for anonymous visitors.
   if (user && request.nextUrl.pathname !== '/account-blocked') {
-    const { data: profile } = await supabase.from('profiles').select('is_blocked').eq('id', user.id).maybeSingle()
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('is_blocked, onboarding_completed')
+      .eq('id', user.id)
+      .maybeSingle()
+
     if (profile?.is_blocked) {
       await supabase.auth.signOut()
       const url = request.nextUrl.clone()
@@ -49,7 +54,37 @@ export async function updateSession(request: NextRequest) {
       supabaseResponse.cookies.getAll().forEach((cookie) => redirectResponse.cookies.set(cookie))
       return redirectResponse
     }
+
+    // A signed-up-but-not-yet-onboarded user (hasn't picked a primary
+    // role) shouldn't be able to jump straight into an app area via a
+    // direct URL, bookmark, or back button — send them to finish
+    // onboarding first. Public/marketing pages, auth pages, and
+    // /onboarding itself are deliberately not in this list.
+    if (
+      profile?.onboarding_completed === false &&
+      request.nextUrl.pathname !== '/onboarding' &&
+      isOnboardingGatedPath(request.nextUrl.pathname)
+    ) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/onboarding'
+      url.search = ''
+      const redirectResponse = NextResponse.redirect(url)
+      supabaseResponse.cookies.getAll().forEach((cookie) => redirectResponse.cookies.set(cookie))
+      return redirectResponse
+    }
   }
 
   return supabaseResponse
+}
+
+function isOnboardingGatedPath(pathname: string): boolean {
+  if (pathname === '/dashboard' || pathname.startsWith('/dashboard/')) return true
+  if (pathname === '/profile') return true
+  if (pathname === '/properties/new') return true
+  if (/^\/properties\/[^/]+\/edit$/.test(pathname)) return true
+  if (pathname === '/requirements' || pathname.startsWith('/requirements/')) return true
+  if (pathname === '/projects/new') return true
+  if (/^\/projects\/[^/]+\/(edit|inventory)$/.test(pathname)) return true
+  if (pathname === '/saved') return true
+  return false
 }
