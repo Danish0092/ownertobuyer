@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { uniqueSlug } from "@/lib/slug";
 import { parseProjectForm } from "@/lib/parse-project-form";
+import { getAccountType } from "@/lib/auth-roles";
 
 export type ProjectActionResult = { error: string } | null;
 
@@ -14,6 +15,12 @@ export async function createProject(_prevState: ProjectActionResult, formData: F
   } = await supabase.auth.getUser();
 
   if (!user) redirect("/login");
+
+  // Mirrors the page-level check in app/projects/new/page.tsx — this
+  // action is the actual mutation entry point, so it needs its own
+  // check rather than trusting the page to have gated access.
+  const accountType = await getAccountType(supabase, user.id);
+  if (accountType !== "DEVELOPER") return { error: "Only Developer/Society accounts can create projects." };
 
   const parsed = parseProjectForm(formData);
   if ("error" in parsed) return parsed;

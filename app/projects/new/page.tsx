@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
+import { getAccountType } from "@/lib/auth-roles";
 import { ProjectForm } from "./ProjectForm";
 import { createProject } from "./actions";
 
@@ -12,6 +13,12 @@ export default async function NewProjectPage() {
   } = await supabase.auth.getUser();
 
   if (!user) redirect("/login");
+
+  // Project creation is Developer/Society-specific management, unlike
+  // Post Property (which Owner and Dealer both legitimately use) —
+  // anyone else landing here directly gets sent to their own dashboard.
+  const accountType = await getAccountType(supabase, user.id);
+  if (accountType !== "DEVELOPER") redirect("/dashboard");
 
   // Single-city platform for now, same as the property/requirement flows.
   const { data: city } = await supabase.from("cities").select("id, name").eq("slug", "lahore").single();

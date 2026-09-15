@@ -1,9 +1,19 @@
 import { createClient } from "@/lib/supabase/server";
+import { getAccountType } from "@/lib/auth-roles";
+import { PUBLIC_NAV_ITEMS, AUTHENTICATED_NAV_ITEMS, getRoleNavItems, PRIMARY_CTA } from "@/lib/nav-config";
 
 // Shared top nav — used on Home, Search, and PropertyDetail. An async
 // Server Component (not a layout) because each of those pages has its
 // own distinct hero/header background right underneath it in the
 // design; this only owns the nav bar itself.
+//
+// Nav items are role-aware (lib/nav-config.ts): the public marketplace
+// links are always shown, but the management items (My Properties vs.
+// Properties I Represent vs. My Projects, etc.) and the primary CTA
+// button change based on the signed-in user's account_type. This is
+// UI-only — the actual authorization for the management routes lives
+// server-side (lib/supabase/proxy.ts + each page), so this nav can't
+// be relied on as the security boundary, only as not-misleading.
 export async function SiteHeader() {
   const supabase = await createClient();
   const {
@@ -11,9 +21,17 @@ export async function SiteHeader() {
   } = await supabase.auth.getUser();
 
   let initial = "OT";
+  let navItems = [...PUBLIC_NAV_ITEMS];
+  let cta = { label: "Post Property FREE", href: "/properties/new" };
+
   if (user) {
-    const { data: profile } = await supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle();
+    const [{ data: profile }, accountType] = await Promise.all([
+      supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle(),
+      getAccountType(supabase, user.id),
+    ]);
     initial = (profile?.full_name || "?").charAt(0).toUpperCase();
+    navItems = [...PUBLIC_NAV_ITEMS, ...AUTHENTICATED_NAV_ITEMS, ...getRoleNavItems(accountType)];
+    cta = PRIMARY_CTA[accountType];
   }
 
   return (
@@ -22,33 +40,28 @@ export async function SiteHeader() {
         OwnerTo<span className="text-[#F59E0B]">Buyer</span>
       </a>
       <nav className="ml-3 hidden flex-wrap gap-5 lg:flex">
-        <a href="/projects" className="font-body text-sm text-[#667085] transition-colors hover:text-[#0B2545]">
-          Projects
-        </a>
-        <a href="/requirements/new" className="font-body text-sm text-[#667085] transition-colors hover:text-[#0B2545]">
-          Post Requirement
-        </a>
-        <span className="font-body text-sm text-[#98A2B3]">Property Videos</span>
-        <a href="/saved" className="font-body text-sm text-[#667085] transition-colors hover:text-[#0B2545]">
-          Saved
-        </a>
-        {user && (
-          <a href="/dashboard" className="font-body text-sm text-[#667085] transition-colors hover:text-[#0B2545]">
-            My Properties
-          </a>
-        )}
-        {user && (
-          <a href="/requirements" className="font-body text-sm text-[#667085] transition-colors hover:text-[#0B2545]">
-            My Requirements
-          </a>
+        {navItems.map((item) =>
+          item.disabled ? (
+            <span key={item.label} className="font-body text-sm text-[#98A2B3]">
+              {item.label}
+            </span>
+          ) : (
+            <a
+              key={item.label}
+              href={item.href}
+              className="font-body text-sm text-[#667085] transition-colors hover:text-[#0B2545]"
+            >
+              {item.label}
+            </a>
+          )
         )}
       </nav>
       <div className="ml-auto flex items-center gap-2.5">
         <a
-          href="/properties/new"
+          href={cta.href}
           className="whitespace-nowrap rounded-[10px] bg-gradient-to-br from-[#F59E0B] to-[#EA7D0B] px-4.5 py-2.5 font-display text-[13px] font-extrabold text-white shadow-[0_4px_12px_rgba(245,158,11,0.3)]"
         >
-          Post Property FREE
+          {cta.label}
         </a>
         <a
           href={user ? "/profile" : "/login"}

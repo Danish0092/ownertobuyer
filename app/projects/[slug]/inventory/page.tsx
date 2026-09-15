@@ -4,6 +4,7 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { labelize } from "@/lib/property-options";
 import { priceLabel, sizeRangeLabel } from "@/lib/format";
+import { getAccountType } from "@/lib/auth-roles";
 import { AddInventoryForm } from "./AddInventoryForm";
 import { InventoryRowActions } from "./InventoryRowActions";
 
@@ -25,6 +26,9 @@ export default async function ProjectInventoryPage({ params }: { params: Promise
 
   if (!project) notFound();
   if (project.developer_id !== user.id) redirect(`/projects/${slug}`);
+
+  const accountType = await getAccountType(supabase, user.id);
+  if (accountType !== "DEVELOPER") redirect("/dashboard");
 
   const { data: inventory } = await supabase
     .from("project_inventory")

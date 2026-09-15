@@ -4,6 +4,7 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { ProjectForm } from "@/app/projects/new/ProjectForm";
 import { priceLabel } from "@/lib/format";
+import { getAccountType } from "@/lib/auth-roles";
 import { updateProject } from "./actions";
 
 export default async function EditProjectPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -28,6 +29,9 @@ export default async function EditProjectPage({ params }: { params: Promise<{ sl
 
   if (!project) notFound();
   if (project.developer_id !== user.id) redirect(`/projects/${slug}`);
+
+  const accountType = await getAccountType(supabase, user.id);
+  if (accountType !== "DEVELOPER") redirect("/dashboard");
 
   const [{ data: areas }, { data: societies }] = await Promise.all([
     supabase.from("areas").select("id, city_id, name").eq("city_id", project.city_id).order("name"),

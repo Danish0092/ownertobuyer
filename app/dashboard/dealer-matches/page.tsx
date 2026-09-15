@@ -4,6 +4,7 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { PotentialBuyerCard, type PotentialBuyerMatch } from "@/components/PotentialBuyerCard";
 import { MatchingPropertyCard, type MatchedProperty } from "@/components/MatchingPropertyCard";
 import { resolveCardMedia } from "@/lib/property-media";
+import { getAccountType } from "@/lib/auth-roles";
 
 // A Realtor operates on both sides of the matching engine at once —
 // their represented properties (as seller) and the client requirements
@@ -18,6 +19,13 @@ export default async function DealerMatchesPage() {
   } = await supabase.auth.getUser();
 
   if (!user) redirect("/login");
+
+  // This consolidated view is Realtor/Dealer-specific — a Buyer or
+  // Owner manually hitting this URL would only ever see their own
+  // ownership-scoped (usually empty) data anyway, but it's still the
+  // wrong dashboard for their role, so redirect them to their own.
+  const accountType = await getAccountType(supabase, user.id);
+  if (accountType !== "DEALER") redirect("/dashboard");
 
   const [{ data: properties }, { data: requirements }] = await Promise.all([
     supabase.from("properties").select("id, title, slug").eq("seller_id", user.id).neq("status", "DELETED"),
