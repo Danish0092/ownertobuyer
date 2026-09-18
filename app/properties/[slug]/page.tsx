@@ -27,7 +27,7 @@ export default async function PropertyDetailPage({
       `id, seller_id, title, description, purpose, category, property_type, price, price_type,
        size, size_unit, bedrooms, bathrooms, parking_spaces, floor_number, total_floors,
        possession_status, installment_available, furnished_status, construction_status,
-       authority_status, seller_type, representation_confirmed, status, address, created_at,
+       authority_status, seller_type, status, address, created_at,
        cities(name), areas(name), societies(name),
        property_amenities(amenities(name)),
        property_media(storage_path, media_type, is_primary, sort_order),
@@ -88,10 +88,7 @@ export default async function PropertyDetailPage({
   ];
 
   const seller = property.profiles;
-  // "Represented by" — never implies the realtor owns it, per the
-  // product rule that a realtor is not the owner just because they
-  // posted the listing.
-  const sellerBadgeText = property.seller_type === "OWNER" ? "LISTED BY OWNER" : "LISTED BY REALTOR";
+  const sellerBadgeText = "LISTED BY OWNER";
   const sellerJoined = seller?.created_at
     ? new Date(seller.created_at).toLocaleDateString("en-US", { month: "short", year: "numeric" })
     : "—";
@@ -122,19 +119,14 @@ export default async function PropertyDetailPage({
         <div className="flex min-w-[200px] flex-1 flex-col gap-2.5">
           {[1, 2].map((i) =>
             mediaUrls[i]?.url ? (
-              mediaUrls[i].type === "VIDEO" ? (
-                // eslint-disable-next-line jsx-a11y/media-has-caption
-                <video key={i} src={mediaUrls[i].url!} controls className="h-[165px] rounded-[18px] object-cover" />
-              ) : (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img key={i} src={mediaUrls[i].url!} alt="" className="h-[165px] rounded-[18px] object-cover" />
-              )
+              // eslint-disable-next-line @next/next/no-img-element
+              <img key={i} src={mediaUrls[i].url!} alt="" className="h-[165px] rounded-[18px] object-cover" />
             ) : (
               <div
                 key={i}
                 className="flex h-[165px] items-center justify-center rounded-[18px] bg-[#DDE8F5] text-xs text-[#7C93B5]"
               >
-                {i === 1 ? "Photo 2" : "Photo / Video"}
+                {i === 1 ? "Photo 2" : "Photo 3"}
               </div>
             )
           )}
@@ -147,13 +139,9 @@ export default async function PropertyDetailPage({
           <div className="mb-2 flex items-center gap-2.5">
             <span
               className="rounded-full px-3.5 py-1.5 font-display text-[11px] font-extrabold"
-              style={
-                property.seller_type === "OWNER"
-                  ? { background: "linear-gradient(135deg,#22C55E,#14B8A6)", color: "#fff" }
-                  : { background: "#EEF2F7", color: "#475467" }
-              }
+              style={{ background: "linear-gradient(135deg,#22C55E,#14B8A6)", color: "#fff" }}
             >
-              {property.seller_type === "OWNER" ? "OWNER DIRECT" : "DEALER"}
+              OWNER DIRECT
             </span>
             <SaveButton propertyId={property.id} initialSaved={!!favoriteRow?.data} isLoggedIn={!!user} />
           </div>
@@ -251,29 +239,16 @@ export default async function PropertyDetailPage({
               </div>
               <div>
                 <div className="font-display font-bold text-[#101828]">
-                  {property.seller_type === "DEALER"
-                    ? `Represented by ${seller?.full_name ?? "Realtor"}`
-                    : (seller?.full_name ?? "Seller")}
+                  {seller?.full_name ?? "Seller"}
                 </div>
                 <div className="text-xs text-[#667085]">
-                  {/* Uses this LISTING's seller_type (matches the badge above),
-                      not the seller's own profile account_type — those can now
-                      legitimately diverge since account_type also covers
-                      BUYER/DEVELOPER, which aren't valid ways to describe who's
-                      selling a specific property. */}
-                  {property.seller_type === "OWNER" ? "Owner" : "Realtor / Dealer"} • Joined {sellerJoined}
+                  Owner • Joined {sellerJoined}
                 </div>
               </div>
             </div>
             <div className="mb-4 text-[12.5px] text-[#475467]">
               {sellerListingsCount ?? 0} active listing{(sellerListingsCount ?? 0) === 1 ? "" : "s"} on OwnerToBuyer
             </div>
-            {property.seller_type === "DEALER" && property.representation_confirmed && (
-              <div className="mb-4 rounded-lg bg-[#F8FAFC] px-3 py-2.5 text-[11.5px] text-[#667085]">
-                ✓ This realtor has declared they are authorized to represent this property. This is a self-declared
-                claim — OwnerToBuyer does not verify ownership or authorization.
-              </div>
-            )}
             <ContactButtons propertyId={property.id} propertyTitle={property.title} phoneNumber={seller?.phone_number ?? null} />
             <p className="mt-3.5 text-center text-[11px] text-[#98A2B3]">
               Verify all property information independently before making any payment or transaction.

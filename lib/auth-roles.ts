@@ -10,12 +10,11 @@ type Supabase = Awaited<ReturnType<typeof createClient>>;
 export const ROLE_PRIMARY_PATH: Record<AccountType, string> = {
   OWNER: "/properties/new",
   BUYER: "/requirements/new",
-  DEALER: "/dashboard",
   DEVELOPER: "/dashboard",
 };
 
 export function isAccountType(value: string | null | undefined): value is AccountType {
-  return value === "OWNER" || value === "BUYER" || value === "DEALER" || value === "DEVELOPER";
+  return value === "OWNER" || value === "BUYER" || value === "DEVELOPER";
 }
 
 export async function getAccountType(supabase: Supabase, userId: string): Promise<AccountType> {

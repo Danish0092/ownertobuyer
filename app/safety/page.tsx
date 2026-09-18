@@ -7,7 +7,7 @@ export default function SafetyPage() {
         <h2>We don't verify anything</h2>
         <p>
           OwnerToBuyer does not verify property ownership, legal documents, approvals, NOCs, outstanding dues, or the
-          accuracy of anything a seller or dealer provides. Anyone can create an account and post a listing. Treat
+          accuracy of anything a seller provides. Anyone can create an account and post a listing. Treat
           every listing as unverified until you've checked it yourself.
         </p>
       </div>

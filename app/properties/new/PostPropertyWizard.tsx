@@ -3,7 +3,9 @@
 import { useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
-  PROPERTY_TYPES,
+  PROPERTY_CATEGORIES,
+  PROPERTY_TYPES_BY_CATEGORY,
+  type PropertyCategory,
   SIZE_UNITS,
   AUTHORITY_STATUSES,
   labelize,
@@ -39,21 +41,7 @@ import { createProperty, type ActionResult } from "./actions";
 type LookupRow = { id: string; name: string };
 type AreaRow = { id: string; city_id: string; name: string };
 
-const PROPERTY_TYPE_OPTIONS: PropertyType[] = [...PROPERTY_TYPES];
-
-const PROPERTY_TYPE_TO_CATEGORY: Record<PropertyType, "RESIDENTIAL" | "COMMERCIAL" | "AGRICULTURAL" | "OTHER"> = {
-  HOUSE: "RESIDENTIAL",
-  APARTMENT: "RESIDENTIAL",
-  FARM_HOUSE: "RESIDENTIAL",
-  PLOT: "RESIDENTIAL",
-  SHOP: "COMMERCIAL",
-  OFFICE: "COMMERCIAL",
-  BUILDING: "COMMERCIAL",
-  FACTORY: "COMMERCIAL",
-  WAREHOUSE: "COMMERCIAL",
-  AGRICULTURAL_LAND: "AGRICULTURAL",
-  OTHER: "OTHER",
-};
+const CATEGORY_OPTIONS = PROPERTY_CATEGORIES.filter((c) => c !== "OTHER");
 
 const POSSESSION_OPTIONS = ["Immediate", "Within 3 Months", "Within 6 Months", "On Completion"] as const;
 const POSSESSION_MAP: Record<(typeof POSSESSION_OPTIONS)[number], string> = {
@@ -63,14 +51,13 @@ const POSSESSION_MAP: Record<(typeof POSSESSION_OPTIONS)[number], string> = {
   "On Completion": "UNDER_CONSTRUCTION",
 };
 
-const TOTAL_STEPS = 6;
+const TOTAL_STEPS = 5;
 const STEP_LABELS = [
-  "Step 1 of 6 — What are you listing?",
-  "Step 2 of 6 — Location",
-  "Step 3 of 6 — Details & Price",
-  "Step 4 of 6 — Photos & Video",
-  "Step 5 of 6 — Who's listing?",
-  "Step 6 of 6 — Preview & Publish",
+  "Step 1 of 5 — What are you listing?",
+  "Step 2 of 5 — Location",
+  "Step 3 of 5 — Details & Price",
+  "Step 4 of 5 — Photos",
+  "Step 5 of 5 — Preview & Publish",
 ];
 
 function bigBtn(active: boolean) {
@@ -93,11 +80,6 @@ function segBtn(active: boolean) {
     ? "flex-1 py-2.5 rounded-[10px] font-display text-[13px] font-bold bg-[#0B2545] text-white border-none"
     : "flex-1 py-2.5 rounded-[10px] font-display text-[13px] font-bold bg-white text-[#334155] border-[1.5px] border-[#E4E9F2]";
 }
-function cardBtn(active: boolean) {
-  return active
-    ? "text-left p-5 rounded-2xl cursor-pointer border-none bg-gradient-to-br from-[#22C55E] to-[#14B8A6] text-white shadow-[0_10px_24px_rgba(20,184,166,0.3)]"
-    : "text-left p-5 rounded-2xl cursor-pointer border-[1.5px] border-[#E4E9F2] bg-white text-[#101828]";
-}
 const inputClass =
   "w-full rounded-[10px] border-[1.5px] border-[#E4E9F2] px-3.5 py-2.5 text-sm text-[#101828] outline-none";
 const labelClass = "mb-1.5 block text-xs font-semibold text-[#667085]";
@@ -107,13 +89,11 @@ export function PostPropertyWizard({
   cityName,
   areas,
   societies,
-  defaultSellerType,
 }: {
   cityId: string;
   cityName: string;
   areas: AreaRow[];
   societies: AreaRow[];
-  defaultSellerType: string;
 }) {
   const router = useRouter();
   const [step, setStep] = useState(1);
@@ -122,6 +102,7 @@ export function PostPropertyWizard({
   const [pending, startTransition] = useTransition();
 
   const [purpose, setPurpose] = useState<"SALE" | "RENT">("SALE");
+  const [category, setCategory] = useState<PropertyCategory>("RESIDENTIAL");
   const [propertyType, setPropertyType] = useState<PropertyType | null>(null);
 
   const [area, setArea] = useState("");
@@ -145,12 +126,7 @@ export function PostPropertyWizard({
   const [authorityStatus, setAuthorityStatus] = useState<(typeof AUTHORITY_STATUSES)[number]>("NOT_PROVIDED");
 
   const [photos, setPhotos] = useState<File[]>([]);
-  const [video, setVideo] = useState<File | null>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
-  const videoInputRef = useRef<HTMLInputElement>(null);
-
-  const [sellerType, setSellerType] = useState<string | null>(defaultSellerType || null);
-  const [representationConfirmed, setRepresentationConfirmed] = useState(false);
 
   const progressColor = (i: number) => (i <= step ? "#2563EB" : "#E4E9F2");
 
@@ -159,9 +135,8 @@ export function PostPropertyWizard({
   const nextDisabled = useMemo(() => {
     if (step === 1) return !purpose || !propertyType;
     if (step === 3) return !priceText.trim() || !size.trim();
-    if (step === 5) return !sellerType || (sellerType === "DEALER" && !representationConfirmed);
     return false;
-  }, [step, purpose, propertyType, priceText, size, sellerType, representationConfirmed]);
+  }, [step, purpose, propertyType, priceText, size]);
 
   function addPhotos(files: FileList | null) {
     if (!files) return;
@@ -182,8 +157,7 @@ export function PostPropertyWizard({
   }
 
   function handlePublish() {
-    if (!propertyType || !sellerType) return;
-    if (sellerType === "DEALER" && !representationConfirmed) return;
+    if (!propertyType) return;
     const price = parsePakistaniPrice(priceText);
     if (price === null) {
       setError('Price didn\'t parse — try a plain number or "5.25 Crore" style.');
@@ -194,7 +168,7 @@ export function PostPropertyWizard({
     const formData = new FormData();
     formData.set("title", buildTitle());
     formData.set("purpose", purpose);
-    formData.set("category", PROPERTY_TYPE_TO_CATEGORY[propertyType]);
+    formData.set("category", category);
     formData.set("property_type", propertyType);
     formData.set("city_id", cityId);
     const areaId = matchId(areas, area);
@@ -219,10 +193,8 @@ export function PostPropertyWizard({
     formData.set("authority_status", authorityStatus);
     if (installments) formData.set("installment_available", "on");
     if (description) formData.set("description", description);
-    formData.set("seller_type", sellerType);
-    if (sellerType === "DEALER" && representationConfirmed) formData.set("representation_confirmed", "on");
+    formData.set("seller_type", "OWNER");
     photos.forEach((f) => formData.append("photos", f));
-    if (video) formData.set("video", video);
 
     startTransition(async () => {
       const result: ActionResult = await createProperty(null, formData);
@@ -263,13 +235,12 @@ export function PostPropertyWizard({
 
   const previewData = {
     title: buildTitle(),
-    badgeText: sellerType === "OWNER" ? "OWNER DIRECT" : "DEALER",
+    badgeText: "OWNER DIRECT",
     areaLine: [society, area, cityName].filter(Boolean).join(", "),
     priceLabel: priceText ? `PKR ${priceText}` : "PKR —",
     specsLine: [size && `${size} ${labelize(unit)}`, beds && `${beds} Bed`, baths && `${baths} Bath`].filter(Boolean).join(" · "),
     sellerName: "You",
-    sellerTypeLabel: sellerType === "OWNER" ? "Owner" : "Dealer",
-    hasVideo: !!video,
+    sellerTypeLabel: "Owner",
     href: "#",
   };
 
@@ -309,9 +280,25 @@ export function PostPropertyWizard({
               Rent Property
             </button>
           </div>
+          <h4 className="mb-3 font-display text-base font-bold text-[#101828]">Category</h4>
+          <div className="mb-6.5 flex flex-wrap gap-2">
+            {CATEGORY_OPTIONS.map((c) => (
+              <button
+                key={c}
+                type="button"
+                onClick={() => {
+                  setCategory(c);
+                  setPropertyType(null);
+                }}
+                className={chipBtn(category === c)}
+              >
+                {labelize(c)}
+              </button>
+            ))}
+          </div>
           <h4 className="mb-3 font-display text-base font-bold text-[#101828]">Property Type</h4>
           <div className="grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] gap-2.5">
-            {PROPERTY_TYPE_OPTIONS.map((t) => (
+            {PROPERTY_TYPES_BY_CATEGORY[category].map((t) => (
               <button key={t} type="button" onClick={() => setPropertyType(t)} className={typeBtn(propertyType === t)}>
                 {labelize(t)}
               </button>
@@ -498,7 +485,7 @@ export function PostPropertyWizard({
       {step === 4 && (
         <div className="rounded-2xl bg-white p-6 shadow-[0_8px_24px_rgba(16,24,40,0.06)]">
           <p className="mb-4 text-[13px] text-[#667085]">
-            Good photos and videos help buyers understand your property faster.
+            Good photos help buyers understand your property faster.
           </p>
           <div className="mb-5 grid grid-cols-3 gap-2.5">
             {photos.map((f, i) => (
@@ -532,60 +519,10 @@ export function PostPropertyWizard({
             hidden
             onChange={(e) => addPhotos(e.target.files)}
           />
-          <div className="mb-2 font-display text-[13px] font-bold text-[#334155]">Video (optional)</div>
-          <button
-            type="button"
-            onClick={() => videoInputRef.current?.click()}
-            className="w-full rounded-xl border-[1.5px] border-[#BFDBFE] bg-[#EFF6FF] py-3.5 font-display text-[13.5px] font-bold text-[#2563EB]"
-          >
-            {video ? video.name : "+ Add Video"}
-          </button>
-          <input
-            ref={videoInputRef}
-            type="file"
-            accept="video/mp4,video/quicktime"
-            hidden
-            onChange={(e) => setVideo(e.target.files?.[0] ?? null)}
-          />
         </div>
       )}
 
       {step === 5 && (
-        <div className="flex flex-col gap-3.5">
-          <h4 className="m-0 font-display text-base font-bold text-[#101828]">You are listing this property as:</h4>
-          <button type="button" onClick={() => setSellerType("OWNER")} className={cardBtn(sellerType === "OWNER")}>
-            <div className="mb-1.5 font-display text-base font-extrabold">🏡 OWNER</div>
-            <p className="m-0 text-[13px] opacity-90">
-              Your listing will be identified as OWNER DIRECT so buyers can easily find properties listed directly
-              by owners.
-            </p>
-          </button>
-          <button type="button" onClick={() => setSellerType("DEALER")} className={cardBtn(sellerType === "DEALER")}>
-            <div className="mb-1.5 font-display text-base font-extrabold">🏢 REALTOR / DEALER</div>
-            <p className="m-0 text-[13px] opacity-90">
-              Your listing will be labeled &ldquo;Represented by&rdquo; you, not as if you own it — buyers will know
-              it&apos;s from a professional agent representing the owner.
-            </p>
-          </button>
-
-          {sellerType === "DEALER" && (
-            <label className="flex items-start gap-2.5 rounded-xl border-[1.5px] border-[#FDE9B8] bg-[#FFF9EB] p-3.5 text-[12.5px] text-[#8A5A0A]">
-              <input
-                type="checkbox"
-                checked={representationConfirmed}
-                onChange={(e) => setRepresentationConfirmed(e.target.checked)}
-                className="mt-0.5 h-4 w-4 flex-none"
-              />
-              <span>
-                I confirm I am authorized by the property owner to list and market this property on their behalf.
-                This is your own declaration — OwnerToBuyer does not verify ownership or authorization.
-              </span>
-            </label>
-          )}
-        </div>
-      )}
-
-      {step === 6 && (
         <div>
           <h4 className="mb-1 font-display text-base font-bold text-[#101828]">Preview</h4>
           <p className="mb-4 text-[12.5px] text-[#667085]">This is exactly how your listing will appear publicly.</p>

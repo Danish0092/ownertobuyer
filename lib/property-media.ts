@@ -14,15 +14,13 @@ export type MediaRow = {
 export async function resolveCardMedia<T extends { id: string; property_media: MediaRow[] }>(
   supabase: SupabaseClient,
   properties: T[]
-): Promise<Map<string, { photoUrl: string | null; hasVideo: boolean }>> {
+): Promise<Map<string, { photoUrl: string | null }>> {
   const primaryPathByProperty = new Map<string, string>();
-  const hasVideoByProperty = new Map<string, boolean>();
 
   for (const p of properties) {
     const photos = p.property_media.filter((m) => m.media_type === "IMAGE").sort((a, b) => a.sort_order - b.sort_order);
     const primary = photos.find((m) => m.is_primary) ?? photos[0];
     if (primary) primaryPathByProperty.set(p.id, primary.storage_path);
-    hasVideoByProperty.set(p.id, p.property_media.some((m) => m.media_type === "VIDEO"));
   }
 
   const paths = [...primaryPathByProperty.values()];
@@ -32,12 +30,11 @@ export async function resolveCardMedia<T extends { id: string; property_media: M
     (signed ?? []).filter((s): s is typeof s & { path: string } => s.path != null).map((s) => [s.path, s.signedUrl])
   );
 
-  const result = new Map<string, { photoUrl: string | null; hasVideo: boolean }>();
+  const result = new Map<string, { photoUrl: string | null }>();
   for (const p of properties) {
     const path = primaryPathByProperty.get(p.id);
     result.set(p.id, {
       photoUrl: path ? (urlByPath.get(path) ?? null) : null,
-      hasVideo: hasVideoByProperty.get(p.id) ?? false,
     });
   }
   return result;

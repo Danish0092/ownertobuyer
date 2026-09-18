@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 
 // Matches the real `PropertyCard` dc-import component from the Claude
 // Design artifact (uuid 48b993b1 in the exported bundle) — badge
-// color/gradient logic, photo-slot height, heart-save button, video
+// color/gradient logic, photo-slot height, heart-save button
 // badge, seller-initial avatar, and the WhatsApp + Call button pair
 // are all reproduced from its source, not inferred.
 
@@ -17,7 +17,6 @@ export type PropertyCardData = {
   sellerName: string;
   sellerTypeLabel: string;
   saved?: boolean;
-  hasVideo?: boolean;
   photoUrl?: string | null;
   href: string;
   // When provided, the heart button performs a real save/unsave instead
@@ -77,13 +76,6 @@ export function PropertyCard({ data }: { data: PropertyCardData }) {
             <path d="M12 21s-7.5-4.6-10-9.3C.4 8 2 4.5 5.6 4c2.2-.3 4 .9 6.4 3.4C14.4 4.9 16.2 3.7 18.4 4c3.6.5 5.2 4 3.6 7.7C19.5 16.4 12 21 12 21z" />
           </svg>
         </button>
-        {data.hasVideo && (
-          <div className="absolute bottom-2.5 right-2.5 flex h-[30px] w-[30px] items-center justify-center rounded-full bg-[#0B2545]/72">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="#FFFFFF">
-              <path d="M8 5v14l11-7z" />
-            </svg>
-          </div>
-        )}
       </div>
       <div className="flex flex-col gap-[7px] px-4 pb-4 pt-3.5">
         <div className="font-display text-[17px] font-bold leading-tight text-[#101828]">{data.title}</div>

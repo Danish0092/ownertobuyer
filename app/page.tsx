@@ -37,7 +37,6 @@ const CATEGORIES: {
 const ENTRY_POINTS: { role: AccountType; icon: string; label: string }[] = [
   { role: "OWNER", icon: "🏠", label: "I Have a Property" },
   { role: "BUYER", icon: "🔎", label: "I Need a Property" },
-  { role: "DEALER", icon: "👔", label: "I Am a Realtor" },
   { role: "DEVELOPER", icon: "🏗️", label: "I Am a Developer" },
 ];
 
@@ -96,14 +95,13 @@ export default async function Home() {
 
   const featuredCards: PropertyCardData[] = (featured ?? []).map((p) => ({
     title: p.title,
-    badgeText: p.seller_type === "OWNER" ? "OWNER DIRECT" : "DEALER",
+    badgeText: "OWNER DIRECT",
     areaLine: areaLine(p.societies?.name, p.areas?.name, p.cities?.name),
     priceLabel: priceLabel(p.price, p.price_type),
     specsLine: specsLine(p.size, p.size_unit, p.bedrooms, p.bathrooms),
     sellerName: "Seller",
-    sellerTypeLabel: p.seller_type === "OWNER" ? "Owner" : "Dealer",
+    sellerTypeLabel: "Owner",
     photoUrl: cardMedia.get(p.id)?.photoUrl,
-    hasVideo: cardMedia.get(p.id)?.hasVideo ?? false,
     href: `/properties/${p.slug}`,
   }));
 
@@ -192,7 +190,7 @@ export default async function Home() {
               Skip the middleman and connect directly with property owners.
             </p>
           </div>
-          <a href="/search?seller=OWNER" className="font-display text-[13px] font-bold text-[#0D9488]">
+          <a href="/search" className="font-display text-[13px] font-bold text-[#0D9488]">
             View all →
           </a>
         </div>
@@ -237,26 +235,6 @@ export default async function Home() {
           </div>
         </section>
       )}
-
-      {/* Video discovery */}
-      <section className="mt-14 bg-gradient-to-b from-[#EFFCF8] to-[#F7F9FC] px-6 py-14">
-        <div className="mx-auto max-w-[1140px]">
-          <div className="flex flex-wrap items-baseline justify-between gap-2">
-            <div>
-              <h2 className="m-0 mb-1 font-display text-[28px] font-extrabold text-[#101828]">
-                Discover Properties Through Video
-              </h2>
-              <p className="m-0 text-sm text-[#667085]">Walk through real properties before you visit.</p>
-            </div>
-            <button type="button" className="font-display text-[13px] font-bold text-[#0D9488]">
-              Watch more →
-            </button>
-          </div>
-          <div className="mt-5.5 rounded-2xl border border-dashed border-[#CFEAE1] bg-white/60 px-6 py-12 text-center text-sm text-[#667085]">
-            No property videos yet — sellers can add one when they post a listing.
-          </div>
-        </div>
-      </section>
 
       {/* Popular areas */}
       <section className="mx-auto w-full max-w-[1140px] px-6 pb-2 pt-14">

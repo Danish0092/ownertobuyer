@@ -11,8 +11,8 @@ export function SiteFooter() {
               OwnerTo<span className="text-[#F59E0B]">Buyer</span>
             </div>
             <p className="mb-4.5 max-w-[280px] text-[13px] leading-relaxed text-[#AEC2E0]">
-              Lahore&apos;s owner-direct property marketplace. Buy Direct. Sell Free. Connect with property owners and
-              dealers without unnecessary middlemen.
+              Lahore&apos;s owner-direct property marketplace. Buy Direct. Sell Free. Connect with property owners
+              without unnecessary middlemen.
             </p>
             <a
               href="/properties/new"
@@ -39,7 +39,6 @@ export function SiteFooter() {
               { label: "Buy", href: "/search?purpose=SALE" },
               { label: "Rent", href: "/search?purpose=RENT" },
               { label: "Owner Direct", href: "/search?seller=OWNER" },
-              { label: "Property Videos", href: "#" },
               { label: "Post Property", href: "/properties/new" },
             ]}
           />

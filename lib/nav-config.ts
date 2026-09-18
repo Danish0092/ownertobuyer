@@ -18,8 +18,6 @@ export const PUBLIC_NAV_ITEMS: NavItem[] = [
 // listing while browsing isn't a management action.
 export const AUTHENTICATED_NAV_ITEMS: NavItem[] = [{ label: "Saved", href: "/saved" }];
 
-const MESSAGES_ITEM: NavItem = { label: "Messages", href: "#", disabled: true };
-
 // Role-specific management nav — this is the part that actually
 // differs, matching each role's dashboard branch in app/dashboard/page.tsx.
 export function getRoleNavItems(accountType: AccountType): NavItem[] {
@@ -28,26 +26,16 @@ export function getRoleNavItems(accountType: AccountType): NavItem[] {
       return [
         { label: "My Properties", href: "/dashboard" },
         { label: "Buyer Matches", href: "/dashboard/matches" },
-        MESSAGES_ITEM,
       ];
     case "BUYER":
       return [
         { label: "My Requirements", href: "/requirements" },
         { label: "Matching Properties", href: "/requirements/matches" },
-        MESSAGES_ITEM,
-      ];
-    case "DEALER":
-      return [
-        { label: "Properties I Represent", href: "/dashboard" },
-        { label: "Client Requirements", href: "/requirements" },
-        { label: "Dealer Match", href: "/dashboard/dealer-matches" },
-        MESSAGES_ITEM,
       ];
     case "DEVELOPER":
       return [
         { label: "My Projects", href: "/dashboard" },
         { label: "Leads", href: "#", disabled: true },
-        MESSAGES_ITEM,
       ];
   }
 }
@@ -55,6 +43,5 @@ export function getRoleNavItems(accountType: AccountType): NavItem[] {
 export const PRIMARY_CTA: Record<AccountType, { label: string; href: string }> = {
   OWNER: { label: "Post Property FREE", href: "/properties/new" },
   BUYER: { label: "+ Post Requirement", href: "/requirements/new" },
-  DEALER: { label: "+ Add Property", href: "/properties/new" },
   DEVELOPER: { label: "+ Create Project", href: "/projects/new" },
 };

@@ -4,13 +4,11 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { PurposeTabs } from "@/components/PurposeTabs";
 import { SearchBar } from "@/components/SearchBar";
-import { SellerTypeChips } from "@/components/SellerTypeChips";
 import { FilterModal, type SearchFilters } from "@/components/FilterModal";
 
 export type SearchState = {
   purpose: "SALE" | "RENT";
   q: string;
-  seller: "ALL" | "OWNER" | "DEALER";
   sort: string;
   filters: SearchFilters;
 };
@@ -29,7 +27,6 @@ export function SearchControls({ initial }: { initial: SearchState }) {
     const params = new URLSearchParams();
     if (next.purpose !== "SALE") params.set("purpose", next.purpose);
     if (next.q) params.set("q", next.q);
-    if (next.seller !== "ALL") params.set("seller", next.seller);
     if (next.sort !== "recommended") params.set("sort", next.sort);
     if (next.filters.propertyType) params.set("type", next.filters.propertyType);
     if (next.filters.bedrooms) params.set("beds", String(next.filters.bedrooms));
@@ -67,7 +64,6 @@ export function SearchControls({ initial }: { initial: SearchState }) {
           </button>
         </div>
         <div className="mt-3.5 flex flex-wrap items-center gap-2">
-          <SellerTypeChips value={state.seller} onChange={(seller) => push({ ...state, seller })} />
           <select
             value={state.sort}
             onChange={(e) => push({ ...state, sort: e.target.value })}

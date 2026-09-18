@@ -17,9 +17,8 @@ export default async function NewPropertyPage() {
   // The wizard's City field is a disabled "Lahore" input (matching
   // the design exactly) — this is a single-city platform for now, so
   // there's nothing to actually choose yet.
-  const [{ data: city }, { data: profile }] = await Promise.all([
+  const [{ data: city }] = await Promise.all([
     supabase.from("cities").select("id, name").eq("slug", "lahore").single(),
-    supabase.from("profiles").select("account_type").eq("id", user.id).single(),
   ]);
 
   const [{ data: areas }, { data: societies }] = await Promise.all([
@@ -35,10 +34,6 @@ export default async function NewPropertyPage() {
         cityName={city?.name ?? "Lahore"}
         areas={areas ?? []}
         societies={societies ?? []}
-        // properties.seller_type only has OWNER/DEALER — account_type can now
-        // also be BUYER/DEVELOPER, neither of which is a valid seller_type, so
-        // this maps rather than passing account_type straight through.
-        defaultSellerType={profile?.account_type === "DEALER" ? "DEALER" : "OWNER"}
       />
     </div>
   );

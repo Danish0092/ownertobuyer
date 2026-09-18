@@ -17,10 +17,6 @@ export default async function SearchPage({
 
   const purpose = one(sp.purpose) === "RENT" ? "RENT" : "SALE";
   const q = one(sp.q) ?? "";
-  const seller = (["OWNER", "DEALER"].includes(one(sp.seller) ?? "") ? one(sp.seller) : "ALL") as
-    | "ALL"
-    | "OWNER"
-    | "DEALER";
   const sort = one(sp.sort) ?? "recommended";
   const type = PROPERTY_TYPES.includes(one(sp.type) as PropertyType) ? (one(sp.type) as PropertyType) : null;
   const beds = one(sp.beds) ? Number(one(sp.beds)) : null;
@@ -39,7 +35,6 @@ export default async function SearchPage({
     .eq("purpose", purpose);
 
   if (q) query = query.or(`title.ilike.%${q}%,address.ilike.%${q}%`);
-  if (seller !== "ALL") query = query.eq("seller_type", seller);
   if (type) query = query.eq("property_type", type);
   if (beds) query = beds >= 5 ? query.gte("bedrooms", 5) : query.eq("bedrooms", beds);
   if (furnished) query = query.eq("furnished_status", furnished);
@@ -69,21 +64,19 @@ export default async function SearchPage({
 
   const cards: PropertyCardData[] = (results ?? []).map((p) => ({
     title: p.title,
-    badgeText: p.seller_type === "OWNER" ? "OWNER DIRECT" : "DEALER",
+    badgeText: "OWNER DIRECT",
     areaLine: areaLine(p.societies?.name, p.areas?.name, p.cities?.name),
     priceLabel: priceLabel(p.price, p.price_type),
     specsLine: specsLine(p.size, p.size_unit, p.bedrooms, p.bathrooms),
     sellerName: "Seller",
-    sellerTypeLabel: p.seller_type === "OWNER" ? "Owner" : "Dealer",
+    sellerTypeLabel: "Owner",
     photoUrl: cardMedia.get(p.id)?.photoUrl,
-    hasVideo: cardMedia.get(p.id)?.hasVideo ?? false,
     href: `/properties/${p.slug}`,
   }));
 
   const initial: SearchState = {
     purpose,
     q,
-    seller,
     sort,
     filters: {
       propertyType: type,

@@ -61,14 +61,13 @@ export default async function SavedPage() {
     propertyId: p.id,
     card: {
       title: p.title,
-      badgeText: p.seller_type === "OWNER" ? "OWNER DIRECT" : "DEALER",
+      badgeText: "OWNER DIRECT",
       areaLine: areaLine(p.societies?.name, p.areas?.name, p.cities?.name),
       priceLabel: priceLabel(p.price, p.price_type),
       specsLine: specsLine(p.size, p.size_unit, p.bedrooms, p.bathrooms),
       sellerName: "Seller",
-      sellerTypeLabel: p.seller_type === "OWNER" ? "Owner" : "Dealer",
+      sellerTypeLabel: "Owner",
       photoUrl: cardMedia.get(p.id)?.photoUrl,
-      hasVideo: cardMedia.get(p.id)?.hasVideo ?? false,
       href: `/properties/${p.slug}`,
     },
   }));

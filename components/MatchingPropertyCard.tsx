@@ -19,9 +19,7 @@ export type MatchedProperty = {
 };
 
 // The "buyer sees a matched property" card — used on /requirements/matches
-// (a buyer's own requirements) and reused as the other half of the
-// Realtor's consolidated Dealer Match view, since a client-requirement
-// match is exactly the same shape as a buyer's own.
+// (a buyer's own requirements).
 export function MatchingPropertyCard({
   score,
   reasons,

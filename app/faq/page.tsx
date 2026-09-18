@@ -15,11 +15,11 @@ const FAQS: { q: string; a: string }[] = [
   },
   {
     q: "What does \"Owner Direct\" mean?",
-    a: "It means the person listing the property is the owner themselves, not a dealer or agent. You can filter search results to Owner Direct listings only.",
+    a: "It means the person listing the property is the owner themselves, not an agent.",
   },
   {
-    q: "Can dealers/agents list properties too?",
-    a: "Yes. When posting a listing you choose whether you're listing as an Owner or a Dealer, and that's shown on the listing so buyers know who they're dealing with.",
+    q: "Can agents list properties too?",
+    a: "OwnerToBuyer is built for owner-direct listings, so listings are posted by the property's owner.",
   },
   {
     q: "How do I edit or remove my listing?",

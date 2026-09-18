@@ -8,12 +8,6 @@ const ROLES: { value: AccountType; icon: string; title: string; description: str
   { value: "OWNER", icon: "🏠", title: "I Have a Property", description: "Sell or rent your property directly." },
   { value: "BUYER", icon: "🔎", title: "I Need a Property", description: "Find a property and post your requirement." },
   {
-    value: "DEALER",
-    icon: "👔",
-    title: "I Am a Realtor / Dealer",
-    description: "Manage properties you represent and your client requirements.",
-  },
-  {
     value: "DEVELOPER",
     icon: "🏗️",
     title: "I Am a Developer / Society",

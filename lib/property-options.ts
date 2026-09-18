@@ -3,37 +3,123 @@
 // Kept as plain data so both the client form and the server action can
 // validate against the same source of truth.
 
+// PROJECTS was added in 20260918120000_expand_property_categories.sql.
 export const PROPERTY_CATEGORIES = [
   "RESIDENTIAL",
   "COMMERCIAL",
   "AGRICULTURAL",
+  "PROJECTS",
   "OTHER",
 ] as const;
 export type PropertyCategory = (typeof PROPERTY_CATEGORIES)[number];
 
 export const PROPERTY_TYPES = [
+  // Residential
   "HOUSE",
+  "VILLA",
   "APARTMENT",
+  "TOWNHOUSE",
+  "PENTHOUSE",
   "FARM_HOUSE",
+  "UPPER_PORTION",
+  "LOWER_PORTION",
+  "ROOM_STUDIO",
   "PLOT",
+  "RESIDENTIAL_FILE",
+  // Commercial
   "SHOP",
   "OFFICE",
+  "SHOWROOM",
   "BUILDING",
-  "FACTORY",
+  "COMMERCIAL_UNIT",
   "WAREHOUSE",
+  "FACTORY",
+  "HOTEL",
+  "RESTAURANT_CAFE",
+  "PETROL_STATION",
+  // Land & agricultural
   "AGRICULTURAL_LAND",
+  "FARM_LAND",
+  "INDUSTRIAL_LAND",
+  "COMMERCIAL_LAND",
+  "RESIDENTIAL_LAND",
+  "ORCHARD_NURSERY",
+  // Projects & investments
+  "NEW_DEVELOPMENT_PROJECT",
+  "HOUSING_SOCIETY",
+  "APARTMENT_PROJECT",
+  "VILLA_PROJECT",
+  "COMMERCIAL_PROJECT",
+  "INSTALLMENT_PLAN",
+  "INVESTMENT_OPPORTUNITY",
+  "PRE_LAUNCH_PROJECT",
+  "RENTAL_RETURN_PROPERTY",
   "OTHER",
 ] as const;
 export type PropertyType = (typeof PROPERTY_TYPES)[number];
 
 // Which property_type values are selectable once a category is chosen.
 // PLOT is valid under both RESIDENTIAL and COMMERCIAL (a plot bought to
-// build a house vs. one bought for a shop/warehouse).
+// build a house vs. one bought for a shop/warehouse); FARM_HOUSE is valid
+// under RESIDENTIAL and AGRICULTURAL ("Farmhouses & Farms").
 export const PROPERTY_TYPES_BY_CATEGORY: Record<PropertyCategory, PropertyType[]> = {
-  RESIDENTIAL: ["HOUSE", "APARTMENT", "FARM_HOUSE", "PLOT"],
-  COMMERCIAL: ["SHOP", "OFFICE", "BUILDING", "FACTORY", "WAREHOUSE", "PLOT"],
-  AGRICULTURAL: ["AGRICULTURAL_LAND"],
+  RESIDENTIAL: [
+    "HOUSE",
+    "VILLA",
+    "APARTMENT",
+    "TOWNHOUSE",
+    "PENTHOUSE",
+    "FARM_HOUSE",
+    "UPPER_PORTION",
+    "LOWER_PORTION",
+    "ROOM_STUDIO",
+    "PLOT",
+    "RESIDENTIAL_FILE",
+  ],
+  COMMERCIAL: [
+    "PLOT",
+    "SHOP",
+    "OFFICE",
+    "SHOWROOM",
+    "BUILDING",
+    "COMMERCIAL_UNIT",
+    "WAREHOUSE",
+    "FACTORY",
+    "HOTEL",
+    "RESTAURANT_CAFE",
+    "PETROL_STATION",
+  ],
+  AGRICULTURAL: [
+    "AGRICULTURAL_LAND",
+    "FARM_LAND",
+    "FARM_HOUSE",
+    "INDUSTRIAL_LAND",
+    "COMMERCIAL_LAND",
+    "RESIDENTIAL_LAND",
+    "ORCHARD_NURSERY",
+  ],
+  PROJECTS: [
+    "NEW_DEVELOPMENT_PROJECT",
+    "HOUSING_SOCIETY",
+    "APARTMENT_PROJECT",
+    "VILLA_PROJECT",
+    "COMMERCIAL_PROJECT",
+    "INSTALLMENT_PLAN",
+    "INVESTMENT_OPPORTUNITY",
+    "PRE_LAUNCH_PROJECT",
+    "RENTAL_RETURN_PROPERTY",
+  ],
   OTHER: ["OTHER"],
+};
+
+const LABEL_OVERRIDES: Record<string, string> = {
+  AGRICULTURAL: "Land & Agricultural",
+  PROJECTS: "Projects & Investments",
+  APARTMENT: "Apartment / Flat",
+  ROOM_STUDIO: "Room / Studio",
+  RESTAURANT_CAFE: "Restaurant / Cafe",
+  ORCHARD_NURSERY: "Orchard / Nursery",
+  FARM_HOUSE: "Farmhouse",
 };
 
 export const PROPERTY_PURPOSES = ["SALE", "RENT"] as const;
@@ -92,17 +178,19 @@ export const SELLER_TYPES = ["OWNER", "DEALER"] as const;
 // this drives which dashboard a user sees, not property listing
 // authorization (RLS never checks account_type, only seller_id/buyer_id
 // ownership — see 20260913120000_add_buyer_developer_account_types.sql).
-export const ACCOUNT_TYPES = ["OWNER", "BUYER", "DEALER", "DEVELOPER"] as const;
+// The DB enum still contains DEALER (removing an enum value would break any
+// existing rows) but the product no longer offers it — see isAccountType().
+export const ACCOUNT_TYPES = ["OWNER", "BUYER", "DEVELOPER"] as const;
 export type AccountType = (typeof ACCOUNT_TYPES)[number];
 
 export const ACCOUNT_TYPE_LABELS: Record<AccountType, string> = {
   OWNER: "Owner",
   BUYER: "Buyer",
-  DEALER: "Realtor / Dealer",
   DEVELOPER: "Developer / Society",
 };
 
 export function labelize(value: string): string {
+  if (LABEL_OVERRIDES[value]) return LABEL_OVERRIDES[value];
   return value
     .toLowerCase()
     .split("_")

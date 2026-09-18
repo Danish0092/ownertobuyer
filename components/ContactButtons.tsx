@@ -2,12 +2,11 @@
 
 import { logContact } from "@/app/properties/[slug]/actions";
 
-// WhatsApp/Call/Chat actions on a property's contact card. Both
+// WhatsApp/Call actions on a property's contact card. Both
 // WhatsApp and Call need the seller's phone number — which nothing in
 // the app currently collects (no profile-edit page exists yet), so
 // they degrade to a disabled, explained state rather than a dead
-// link when it's missing. Chat always shows as "Coming soon": the
-// conversations/messages tables exist, but there's no chat UI yet.
+// link when it's missing.
 export function ContactButtons({
   propertyId,
   propertyTitle,
@@ -45,14 +44,6 @@ export function ContactButtons({
       >
         Call
       </a>
-      <button
-        type="button"
-        disabled
-        title="Chat is coming soon"
-        className="cursor-not-allowed rounded-xl border-[1.5px] border-[#CBD5E1] bg-white py-3.5 font-display text-sm font-extrabold text-[#94A3B8]"
-      >
-        Chat (Coming Soon)
-      </button>
       {!hasPhone && (
         <p className="text-center text-[11px] text-[#98A2B3]">
           Seller hasn&apos;t added a phone number yet.

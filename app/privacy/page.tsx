@@ -6,8 +6,8 @@ export default function PrivacyPage() {
       <div>
         <h2>1. What we collect</h2>
         <ul>
-          <li>Account info: name, email, phone number, account type (owner/dealer), bio, and profile photo</li>
-          <li>Listing content: property details, photos, and videos you upload</li>
+          <li>Account info: name, email, phone number, account type, bio, and profile photo</li>
+          <li>Listing content: property details, and photos you upload</li>
           <li>Usage data: your favorites, saved searches, and reports you file</li>
           <li>
             Contact activity: when you tap WhatsApp/Call on a listing, we log that a contact happened (not the

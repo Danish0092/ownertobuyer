@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { SiteHeader } from "@/components/SiteHeader";
 import { priceLabel, areaLine } from "@/lib/format";
 import { labelize, ACCOUNT_TYPE_LABELS, type AccountType } from "@/lib/property-options";
+import { isAccountType } from "@/lib/auth-roles";
 import { logoutAction } from "./actions";
 import { DeletePropertyButton } from "./DeletePropertyButton";
 import { HideProjectButton } from "@/app/projects/HideProjectButton";
@@ -43,11 +44,12 @@ export default async function DashboardPage({
     .eq("id", user.id)
     .single();
 
-  const accountType = (profile?.account_type ?? "OWNER") as AccountType;
+  // Legacy DEALER profiles (role removed from the product) fall back to OWNER.
+  const accountType: AccountType = isAccountType(profile?.account_type) ? profile.account_type : "OWNER";
   const userInitial = (profile?.full_name || "?").charAt(0).toUpperCase();
 
   // The header bar (avatar, name, account type, logout) is identical
-  // across all four dashboards — only what's below it differs.
+  // across all dashboards — only what's below it differs.
   const header = (
     <div className="bg-gradient-to-r from-[#0B2545] to-[#1D4ED8] px-6 py-8">
       <div className="mx-auto flex max-w-[1140px] items-center gap-3.5">
@@ -100,7 +102,6 @@ export default async function DashboardPage({
           <DashCard href="/requirements" icon="📋" label="My Requirements" value={requirementCount ?? 0} />
           <DashCard href="/requirements/matches" icon="🎯" label="Matching Properties" value={matchCount} />
           <DashCard href="/saved" icon="❤️" label="Favorites" value={favoriteCount ?? 0} />
-          <DashCard icon="💬" label="Messages" comingSoon />
         </div>
 
         <div className="mx-auto w-full max-w-[1140px] px-6 pt-6">
@@ -136,12 +137,6 @@ export default async function DashboardPage({
         <div className="mx-auto flex w-full max-w-[1140px] flex-wrap items-center justify-between gap-2.5 px-6 pt-6">
           <h3 className="m-0 font-display text-lg font-bold text-[#101828]">My Projects</h3>
           <div className="flex items-center gap-2.5">
-            <span
-              title="Project inquiries are coming soon"
-              className="cursor-default rounded-[10px] bg-[#F1F5F9] px-4 py-2.5 font-display text-[13px] font-bold text-[#98A2B3]"
-            >
-              Project Leads / Messages · Coming Soon
-            </span>
             <a
               href="/projects/new"
               className="rounded-[10px] bg-gradient-to-br from-[#F59E0B] to-[#EA7D0B] px-5 py-2.5 font-display text-[13px] font-extrabold text-white"
@@ -209,11 +204,6 @@ export default async function DashboardPage({
     );
   }
 
-  // OWNER and DEALER (Realtor) both use the property-list dashboard
-  // below — a Realtor's listings are just their own properties with
-  // seller_type = DEALER, already fully supported by existing RLS.
-  const isDealer = accountType === "DEALER";
-
   let propertiesQuery = supabase
     .from("properties")
     .select(
@@ -268,29 +258,10 @@ export default async function DashboardPage({
 
       <div className="mx-auto flex w-full max-w-[1140px] flex-wrap items-center justify-between gap-2.5 px-6 pt-6">
         <h3 className="m-0 font-display text-lg font-bold text-[#101828]">
-          {isDealer ? "Represented Properties" : "My Properties"}
+          My Properties
         </h3>
         <div className="flex flex-wrap items-center gap-2.5">
-          {isDealer && (
-            <>
-              <a
-                href="/requirements"
-                className="rounded-[10px] bg-[#F1F5F9] px-4 py-2.5 font-display text-[13px] font-bold text-[#475467]"
-              >
-                Client Requirements
-              </a>
-              <a
-                href="/dashboard/dealer-matches"
-                className="rounded-[10px] bg-[#ECFDF5] px-4 py-2.5 font-display text-[13px] font-bold text-[#15803D]"
-              >
-                🎯 Dealer Matches
-              </a>
-            </>
-          )}
-          {/* For a Dealer, the "Dealer Matches" link above already covers
-              this same data plus their client-requirement matches, so
-              showing both would just be two overlapping links. */}
-          {!isDealer && totalMatches > 0 && (
+          {totalMatches > 0 && (
             <a
               href="/dashboard/matches"
               className="rounded-[10px] bg-[#ECFDF5] px-4 py-2.5 font-display text-[13px] font-bold text-[#15803D]"
@@ -302,12 +273,11 @@ export default async function DashboardPage({
             href="/properties/new"
             className="rounded-[10px] bg-gradient-to-br from-[#F59E0B] to-[#EA7D0B] px-5 py-2.5 font-display text-[13px] font-extrabold text-white"
           >
-            + {isDealer ? "Add Represented Property" : "Post New Property"}
+            + Post New Property
           </a>
         </div>
       </div>
 
-      {!isDealer && (
         <div className="mx-auto w-full max-w-[1140px] px-6 pt-4">
           <a
             href="/requirements/new"
@@ -317,7 +287,6 @@ export default async function DashboardPage({
             <span className="font-display text-[13px] font-extrabold text-[#1D4ED8]">+ Post a Requirement</span>
           </a>
         </div>
-      )}
 
       <div className="mx-auto flex w-full max-w-[1140px] gap-2 overflow-x-auto px-6 pt-4">
         {TABS.map((t) => (
@@ -331,7 +300,7 @@ export default async function DashboardPage({
                 : { background: "#EEF2F7", color: "#475467" }
             }
           >
-            {isDealer && t.value === "PUBLISHED" ? "Active" : t.label}
+            {t.label}
           </a>
         ))}
       </div>
@@ -393,7 +362,7 @@ export default async function DashboardPage({
         <div className="px-6 py-16 text-center text-[#667085]">
           <h4 className="mb-3 font-display text-base font-bold text-[#101828]">
             {activeTab.value === "ALL"
-              ? `You haven't ${isDealer ? "added" : "posted"} any properties yet.`
+              ? "You haven't posted any properties yet."
               : `No properties in "${activeTab.label}".`}
           </h4>
           <a

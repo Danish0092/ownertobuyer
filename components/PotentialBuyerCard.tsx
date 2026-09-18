@@ -32,9 +32,7 @@ export type PotentialBuyerMatch = {
 };
 
 // The "seller sees a matched buyer requirement" card — used on
-// /dashboard/matches (Owner/Dealer's own properties) and reused as one
-// half of the Realtor's consolidated Dealer Match view, since a
-// represented-property match is exactly the same shape as an owned one.
+// /dashboard/matches (an owner's own properties).
 export function PotentialBuyerCard({
   match,
   property,

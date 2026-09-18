@@ -4,7 +4,7 @@ export default function AboutPage() {
   return (
     <InfoPage title="About OwnerToBuyer" subtitle="Lahore's owner-direct property marketplace.">
       <p>
-        OwnerToBuyer connects property buyers and renters directly with owners and dealers in Lahore, without
+        OwnerToBuyer connects property buyers and renters directly with owners in Lahore, without
         unnecessary middlemen. Sellers post their properties for free; buyers browse, contact sellers directly, and
         handle the deal themselves.
       </p>

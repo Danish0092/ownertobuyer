@@ -6,7 +6,7 @@ export default function TermsPage() {
       <div>
         <h2>1. What OwnerToBuyer is</h2>
         <p>
-          OwnerToBuyer is a listings platform that lets property owners and dealers advertise properties for sale or
+          OwnerToBuyer is a listings platform that lets property owners advertise properties for sale or
           rent, and lets buyers/renters browse and contact them directly. We are not a real estate agency, broker,
           agent, or party to any transaction between users.
         </p>

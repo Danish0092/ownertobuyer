@@ -15,7 +15,7 @@ export default async function NewProjectPage() {
   if (!user) redirect("/login");
 
   // Project creation is Developer/Society-specific management, unlike
-  // Post Property (which Owner and Dealer both legitimately use) —
+  // Post Property (which any signed-in user can use) —
   // anyone else landing here directly gets sent to their own dashboard.
   const accountType = await getAccountType(supabase, user.id);
   if (accountType !== "DEVELOPER") redirect("/dashboard");
