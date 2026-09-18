@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { getAccountType } from "@/lib/auth-roles";
+import { MobileNav } from "@/components/MobileNav";
 import { PUBLIC_NAV_ITEMS, AUTHENTICATED_NAV_ITEMS, getRoleNavItems, PRIMARY_CTA } from "@/lib/nav-config";
 
 // Shared top nav — used on Home, Search, and PropertyDetail. An async
@@ -35,11 +36,12 @@ export async function SiteHeader() {
   }
 
   return (
-    <header className="sticky top-0 z-50 flex items-center gap-6 border-b border-[#EAEFF6] bg-white px-7 py-3.5 shadow-[0_2px_10px_rgba(16,24,40,0.04)]">
+    <header className="sticky top-0 z-50 flex items-center gap-3 border-b border-[#EAEFF6] bg-white px-4 sm:px-7 py-3.5 shadow-[0_2px_10px_rgba(16,24,40,0.04)]">
+      <MobileNav items={navItems} cta={cta} signedIn={!!user} />
       <a href="/" className="font-display text-[19px] font-extrabold text-[#0B2545]">
         OwnerTo<span className="text-[#F59E0B]">Buyer</span>
       </a>
-      <nav className="ml-3 hidden flex-wrap gap-5 lg:flex">
+      <nav className="ml-6 hidden flex-wrap gap-5 lg:flex">
         {navItems.map((item) =>
           item.disabled ? (
             <span key={item.label} className="font-body text-sm text-[#98A2B3]">
@@ -59,13 +61,13 @@ export async function SiteHeader() {
       <div className="ml-auto flex items-center gap-2.5">
         <a
           href={cta.href}
-          className="whitespace-nowrap rounded-[10px] bg-gradient-to-br from-[#F59E0B] to-[#EA7D0B] px-4.5 py-2.5 font-display text-[13px] font-extrabold text-white shadow-[0_4px_12px_rgba(245,158,11,0.3)]"
+          className="hidden whitespace-nowrap sm:block rounded-[10px] bg-gradient-to-br from-[#F59E0B] to-[#EA7D0B] px-4.5 py-2.5 font-display text-[13px] font-extrabold text-white shadow-[0_4px_12px_rgba(245,158,11,0.3)]"
         >
           {cta.label}
         </a>
         <a
           href={user ? "/profile" : "/login"}
-          className="flex h-[38px] w-[38px] items-center justify-center rounded-full bg-[#EFF6FF] font-display text-[13px] font-extrabold text-[#1D4ED8]"
+          className="hidden h-[38px] w-[38px] items-center justify-center rounded-full bg-[#EFF6FF] sm:flex font-display text-[13px] font-extrabold text-[#1D4ED8]"
         >
           {initial}
         </a>
