@@ -9,12 +9,13 @@ type Supabase = Awaited<ReturnType<typeof createClient>>;
 // CTAs and the onboarding redirect can't drift apart.
 export const ROLE_PRIMARY_PATH: Record<AccountType, string> = {
   OWNER: "/properties/new",
+  DEALER: "/dashboard",
   BUYER: "/requirements/new",
   DEVELOPER: "/dashboard",
 };
 
 export function isAccountType(value: string | null | undefined): value is AccountType {
-  return value === "OWNER" || value === "BUYER" || value === "DEVELOPER";
+  return value === "OWNER" || value === "BUYER" || value === "DEALER" || value === "DEVELOPER";
 }
 
 export async function getAccountType(supabase: Supabase, userId: string): Promise<AccountType> {

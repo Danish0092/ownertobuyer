@@ -12,6 +12,7 @@ export default async function AdminDashboardPage() {
     { count: openReports },
     { count: blockedUsers },
     { data: viewsAndContacts },
+    { data: typeRows },
   ] = await Promise.all([
     supabase.from("profiles").select("id", { count: "exact", head: true }),
     supabase.from("properties").select("id", { count: "exact", head: true }).neq("status", "DELETED"),
@@ -19,7 +20,10 @@ export default async function AdminDashboardPage() {
     supabase.from("property_reports").select("id", { count: "exact", head: true }).eq("status", "OPEN"),
     supabase.from("profiles").select("id", { count: "exact", head: true }).eq("is_blocked", true),
     supabase.from("properties").select("views_count, contact_count").neq("status", "DELETED"),
+    supabase.from("profiles").select("account_type"),
   ]);
+
+  const typeCount = (t: string) => (typeRows ?? []).filter((r) => r.account_type === t).length;
 
   const totalViews = (viewsAndContacts ?? []).reduce((sum, p) => sum + (p.views_count ?? 0), 0);
   const totalContacts = (viewsAndContacts ?? []).reduce((sum, p) => sum + (p.contact_count ?? 0), 0);
@@ -29,6 +33,10 @@ export default async function AdminDashboardPage() {
     { label: "Total Properties", value: totalProperties ?? 0 },
     { label: "Published Listings", value: publishedCount ?? 0 },
     { label: "Open Reports", value: openReports ?? 0 },
+    { label: "Buyers", value: typeCount("BUYER") },
+    { label: "Sellers / Owners", value: typeCount("OWNER") },
+    { label: "Dealers / Realtors", value: typeCount("DEALER") },
+    { label: "Developers / Societies", value: typeCount("DEVELOPER") },
     { label: "Blocked Users", value: blockedUsers ?? 0 },
     { label: "Total Views", value: totalViews },
     { label: "Total Contacts", value: totalContacts },
@@ -37,7 +45,7 @@ export default async function AdminDashboardPage() {
   return (
     <div>
       <h2 className="mb-4.5 font-display text-xl font-bold text-[#101828]">Dashboard</h2>
-      <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-3.5">
+      <div className="grid grid-cols-2 sm:grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-3.5">
         {metrics.map((m, i) => (
           <div
             key={m.label}

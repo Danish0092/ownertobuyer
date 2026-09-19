@@ -23,6 +23,7 @@ export const AUTHENTICATED_NAV_ITEMS: NavItem[] = [{ label: "Saved", href: "/sav
 export function getRoleNavItems(accountType: AccountType): NavItem[] {
   switch (accountType) {
     case "OWNER":
+    case "DEALER":
       return [
         { label: "My Properties", href: "/dashboard" },
         { label: "Buyer Matches", href: "/dashboard/matches" },
@@ -42,6 +43,7 @@ export function getRoleNavItems(accountType: AccountType): NavItem[] {
 
 export const PRIMARY_CTA: Record<AccountType, { label: string; href: string }> = {
   OWNER: { label: "Post Property FREE", href: "/properties/new" },
+  DEALER: { label: "Post Property FREE", href: "/properties/new" },
   BUYER: { label: "+ Post Requirement", href: "/requirements/new" },
   DEVELOPER: { label: "+ Create Project", href: "/projects/new" },
 };

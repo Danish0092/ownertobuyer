@@ -34,8 +34,8 @@ export default async function OnboardingPage({
     <div className="flex flex-1 items-center justify-center bg-[#F7F9FC] px-6 py-14 font-body">
       <div className="w-full max-w-2xl">
         <div className="mb-8 text-center">
-          <h1 className="mb-2 font-display text-2xl font-extrabold text-[#101828]">How will you use OwnerToBuyer?</h1>
-          <p className="text-sm text-[#667085]">Choose your primary role. You can use other features later.</p>
+          <h1 className="mb-2 font-display text-2xl font-extrabold text-[#101828]">Tell us about yourself</h1>
+          <p className="text-sm text-[#667085]">Select the option that best describes how you will use OwnerToBuyer.</p>
         </div>
         <OnboardingForm preselected={preselected} />
       </div>

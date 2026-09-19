@@ -4,7 +4,7 @@ import { priceLabel, areaLine } from "@/lib/format";
 import { HideButton } from "./HideButton";
 
 const th = "px-3.5 py-3 text-left text-[11px] font-bold uppercase tracking-wide text-[#98A2B3]";
-const td = "px-3.5 py-3 text-[#344054]";
+const td = "whitespace-nowrap px-3.5 py-3 text-[#344054]";
 
 const STATUS_STYLE: Record<string, { bg: string; fg: string }> = {
   PUBLISHED: { bg: "#DCFCE7", fg: "#15803D" },
@@ -30,7 +30,7 @@ export default async function AdminPropertiesPage() {
     <div>
       <h2 className="mb-4.5 font-display text-xl font-bold text-[#101828]">Properties</h2>
       <div className="overflow-x-auto rounded-2xl bg-white shadow-[0_6px_18px_rgba(16,24,40,0.06)]">
-        <table className="w-full border-collapse text-[13.5px]">
+        <table className="w-full min-w-[640px] border-collapse text-[13.5px]">
           <thead>
             <tr className="bg-[#F8FAFC]">
               <th className={th}>Property</th>

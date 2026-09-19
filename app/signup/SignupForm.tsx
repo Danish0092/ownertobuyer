@@ -14,6 +14,7 @@ export function SignupForm({ initialRole }: { initialRole: string | null }) {
 
   const [method, setMethod] = useState<"email" | "phone">("email");
   const [fullName, setFullName] = useState("");
+  const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -32,6 +33,11 @@ export function SignupForm({ initialRole }: { initialRole: string | null }) {
       setError("Please enter your name.");
       return;
     }
+    // Same loose sanity check the profile page uses — real verification comes later.
+    if (!/^[0-9+\-\s]{7,20}$/.test(phone.trim())) {
+      setError("Please enter a valid phone number.");
+      return;
+    }
     if (password.length < 6) {
       setError("Password must be at least 6 characters.");
       return;
@@ -46,7 +52,7 @@ export function SignupForm({ initialRole }: { initialRole: string | null }) {
       email,
       password,
       options: {
-        data: { full_name: fullName.trim() },
+        data: { full_name: fullName.trim(), phone_number: phone.trim() },
         emailRedirectTo: `${window.location.origin}/auth/confirm?next=${encodeURIComponent(onboardingNext)}`,
       },
     });
@@ -119,6 +125,17 @@ export function SignupForm({ initialRole }: { initialRole: string | null }) {
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
               placeholder="Your name"
+              className="w-full rounded-lg border border-[#D0D5DD] px-3.5 py-2.5 text-sm text-[#101828] outline-none focus:border-[#1D4ED8]"
+            />
+          </Field>
+
+          <Field label="Phone number">
+            <input
+              type="tel"
+              required
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="03xx-xxxxxxx"
               className="w-full rounded-lg border border-[#D0D5DD] px-3.5 py-2.5 text-sm text-[#101828] outline-none focus:border-[#1D4ED8]"
             />
           </Field>

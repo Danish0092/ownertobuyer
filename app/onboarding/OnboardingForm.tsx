@@ -5,14 +5,10 @@ import { completeOnboarding, type OnboardingResult } from "./actions";
 import type { AccountType } from "@/lib/property-options";
 
 const ROLES: { value: AccountType; icon: string; title: string; description: string }[] = [
-  { value: "OWNER", icon: "🏠", title: "I Have a Property", description: "Sell or rent your property directly." },
-  { value: "BUYER", icon: "🔎", title: "I Need a Property", description: "Find a property and post your requirement." },
-  {
-    value: "DEVELOPER",
-    icon: "🏗️",
-    title: "I Am a Developer / Society",
-    description: "Showcase your projects and manage inventory.",
-  },
+  { value: "BUYER", icon: "🔎", title: "Buyer", description: "I'm looking for a property" },
+  { value: "OWNER", icon: "🏠", title: "Seller / Owner", description: "I have a property to sell or rent" },
+  { value: "DEALER", icon: "🤝", title: "Dealer / Realtor", description: "I represent properties or clients" },
+  { value: "DEVELOPER", icon: "🏗️", title: "Developer / Society", description: "I represent a project or development" },
 ];
 
 export function OnboardingForm({ preselected }: { preselected: AccountType | null }) {

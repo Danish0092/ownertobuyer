@@ -178,14 +178,15 @@ export const SELLER_TYPES = ["OWNER", "DEALER"] as const;
 // this drives which dashboard a user sees, not property listing
 // authorization (RLS never checks account_type, only seller_id/buyer_id
 // ownership — see 20260913120000_add_buyer_developer_account_types.sql).
-// The DB enum still contains DEALER (removing an enum value would break any
-// existing rows) but the product no longer offers it — see isAccountType().
-export const ACCOUNT_TYPES = ["OWNER", "BUYER", "DEVELOPER"] as const;
+// Chosen once at onboarding as the user's primary type / initial intent —
+// used for admin visibility and analytics, not to gate marketplace features.
+export const ACCOUNT_TYPES = ["BUYER", "OWNER", "DEALER", "DEVELOPER"] as const;
 export type AccountType = (typeof ACCOUNT_TYPES)[number];
 
 export const ACCOUNT_TYPE_LABELS: Record<AccountType, string> = {
-  OWNER: "Owner",
+  OWNER: "Seller / Owner",
   BUYER: "Buyer",
+  DEALER: "Dealer / Realtor",
   DEVELOPER: "Developer / Society",
 };
 
