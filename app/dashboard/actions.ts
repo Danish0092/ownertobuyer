@@ -1,6 +1,5 @@
 "use server";
 
-import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 
@@ -26,10 +25,4 @@ export async function deleteProperty(propertyId: string): Promise<{ error: strin
 
   revalidatePath("/dashboard");
   return { ok: true };
-}
-
-export async function logoutAction() {
-  const supabase = await createClient();
-  await supabase.auth.signOut();
-  redirect("/");
 }

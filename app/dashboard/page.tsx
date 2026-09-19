@@ -4,7 +4,7 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { priceLabel, areaLine } from "@/lib/format";
 import { labelize, ACCOUNT_TYPE_LABELS, type AccountType } from "@/lib/property-options";
 import { isAccountType } from "@/lib/auth-roles";
-import { logoutAction } from "./actions";
+import { logoutAction } from "@/app/logout/actions";
 import { DeletePropertyButton } from "./DeletePropertyButton";
 import { HideProjectButton } from "@/app/projects/HideProjectButton";
 

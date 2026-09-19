@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { NavItem } from "@/lib/nav-config";
+import { LogoutButton } from "@/components/LogoutButton";
 
 // Hamburger + slide-in drawer shown below the `lg` breakpoint, where the
 // desktop nav in SiteHeader is hidden. Items are passed in from the server
@@ -104,6 +105,7 @@ export function MobileNav({
           >
             {signedIn ? "My Profile" : "Log In / Sign Up"}
           </a>
+          {signedIn && <LogoutButton variant="text" />}
         </div>
       </aside>
     </div>

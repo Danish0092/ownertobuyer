@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { getAccountType } from "@/lib/auth-roles";
+import { LogoutButton } from "@/components/LogoutButton";
 import { MobileNav } from "@/components/MobileNav";
 import { PUBLIC_NAV_ITEMS, AUTHENTICATED_NAV_ITEMS, getRoleNavItems, PRIMARY_CTA } from "@/lib/nav-config";
 
@@ -71,6 +72,12 @@ export async function SiteHeader() {
         >
           {initial}
         </a>
+        {user && (
+          <>
+            <LogoutButton variant="icon" className="sm:hidden" />
+            <LogoutButton variant="text" className="hidden sm:block" />
+          </>
+        )}
       </div>
     </header>
   );
